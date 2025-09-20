@@ -127,6 +127,20 @@ export const bookStadium = async (req, res) => {
     }
 };
 
+export const getUserBookings = async (req, res) => {
+    try {
+        const  { userId } = req.params;
+
+        const bookings = await Booking.find({ userId })
+            .populate("stadiumId", "nameStadium imageUrl descriptionStadium contactStadium");
+
+        res.json(bookings);
+    } catch (err) {
+        console.error("getuserBookings error:", err);
+        res.status(500).json({ message: "server error"});
+    }
+};
+
 
 export const getAllBookings = async (req, res) => {
     try {
@@ -406,5 +420,46 @@ export const resetBookingStatus = async (req, res) => {
     } catch (error) {
         console.error("Error resetting booking status:", error);
         res.status(500).json({ message: "Server error", error });
+    }
+};
+
+export const getDailyBookingStats = async (req, res) => {
+    try {
+        const { month, year } = req.query;
+
+        // ตรวจสอบว่าได้รับค่า month และ year หรือไม่
+        if (!month || !year) {
+            return res.status(400).json({ message: 'Month and year are required.' });
+        }
+
+        const dailyStats = await Booking.aggregate([
+            {
+                $match: {
+                    createdAt: {
+                        $gte: new Date(year, month - 1, 1),
+                        $lt: new Date(year, month, 1)
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: { $dayOfMonth: "$createdAt" },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    day: "$_id",
+                    count: 1
+                }
+            },
+            { $sort: { day: 1 } }
+        ]);
+
+        res.status(200).json(dailyStats);
+    } catch (error) {
+        console.error("Error fetching daily stats:", error);
+        res.status(500).json({ message: "Failed to fetch daily booking stats" });
     }
 };

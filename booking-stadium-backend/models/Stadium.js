@@ -9,6 +9,7 @@ const StadiumSchema = new mongoose.Schema({
         enum: ["active", "inactive", "IsBooking"], // เพิ่มสถานะ IsBooking
         default: "active",
     },
+    imageUrl: { type: String, default: ""},
 },
     { timestamps: true });
 

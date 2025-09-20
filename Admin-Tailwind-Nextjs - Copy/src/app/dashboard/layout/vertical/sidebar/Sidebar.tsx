@@ -1,63 +1,51 @@
 "use client";
-
 import React from "react";
-import { Sidebar } from "flowbite-react";
+import { Sidebar as FBSidebar } from "flowbite-react";
 import SidebarContent from "./Sidebaritems";
 import NavItems from "./NavItems";
 import NavCollapse from "./NavCollapse";
 import SimpleBar from "simplebar-react";
 import Logo from "@/app/dashboard/layout/shared/logo/Logo";
-import { Icon } from "@iconify/react";
 
-
-const SidebarLayout = () => {
+export default function Sidebar() {
   return (
-    <>
-      <div className="xl:block hidden font-kanit">
-        <div className="flex">
-          <Sidebar
-            className="fixed menu-sidebar pt-6 bg-white dark:bg-darkgray z-[10]"
-            aria-label="Sidebar with multi-level dropdown example"
-          >
-            <div className="mb-7 px-4 brand-logo">
-              <Logo />
-            </div>
-
-            <SimpleBar className="h-[calc(100vh_-_120px)]">
-              <Sidebar.Items className="px-4">
-                <Sidebar.ItemGroup className="sidebar-nav">
-                  {SidebarContent.map((item, index) => (
-                    <React.Fragment key={index}>
-                      <h5 className="text-link font-semibold text-sm caption">
-                        <span className="hide-menu">{item.heading}</span>
-                      </h5>
-                      <Icon
-                        icon="solar:menu-dots-bold"
-                        className="text-ld block mx-auto mt-6 leading-6 dark:text-opacity-60 hide-icon"
-                        height={18}
-                      />
-
-                      {item.children?.map((child, index) => (
-                        <React.Fragment key={child.id && index}>
-                          {child.children ? (
-                            <div className="collpase-items">
-                              <NavCollapse item={child} />
-                            </div>
-                          ) : (
-                            <NavItems item={child} />
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </React.Fragment>
-                  ))}
-                </Sidebar.ItemGroup>
-              </Sidebar.Items>
-            </SimpleBar>
-          </Sidebar>
+    <aside
+      className="hidden xl:block border-r bg-white dark:bg-dark sticky top-0 h-[100dvh] w-72"
+    >
+      <div className="h-full flex flex-col">
+        {/* โลโก้ */}
+        <div className="px-4 py-4 flex items-center justify-between">
+          <Logo />
         </div>
-      </div>
-    </>
-  );
-};
 
-export default SidebarLayout;
+        {/* รายการเมนู */}
+        <SimpleBar className="flex-1">
+          <FBSidebar aria-label="Main sidebar" className="menu-sidebar bg-transparent w-full">
+            <FBSidebar.Items className="px-3">
+              <FBSidebar.ItemGroup className="sidebar-nav">
+                {SidebarContent.map((group, gi) => (
+                  <React.Fragment key={`g-${gi}`}>
+                    {/* หัวข้อหมวด */}
+                    <h5 className="text-link font-semibold text-sm caption px-2 py-2">
+                      <span className="hide-menu">{group.heading}</span>
+                    </h5>
+
+                    {group.children?.map((child, ci) => (
+                      <React.Fragment key={child.id ?? `it-${ci}`}>
+                        {child.children ? (
+                          <NavCollapse item={child} />
+                        ) : (
+                          <NavItems item={child} />
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </FBSidebar.ItemGroup>
+            </FBSidebar.Items>
+          </FBSidebar>
+        </SimpleBar>
+      </div>
+    </aside>
+  );
+}

@@ -3,71 +3,91 @@ import React, { useState, useEffect } from "react";
 import { Navbar, Drawer } from "flowbite-react";
 import { Icon } from "@iconify/react";
 import MobileSidebar from "../sidebar/MobileSidebar";
+import { useSidebar } from "../sidebar/useSidebar";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5008";
 
 const Header = () => {
   const [isSticky, setIsSticky] = useState(false);
-  const [isOpen, setIsOpen] = useState(false); // Mobile Sidebar
-  const [staffName, setStaffName] = useState<string>("");
+  const [isOpen, setIsOpen] = useState(false); // Drawer (mobile)
+  const [staffName, setStaffName] = useState<string>("ชื่อผู้ใช้งาน");
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
 
-  // Simulating fetching the staff name (replace with your actual logic)
+  const { open, setOpen } = useSidebar();
+
   useEffect(() => {
-    // Example: Fetch staff name from localStorage, API, or state
-    const name = localStorage.getItem("staffName") || "ชื่อผู้ใช้งาน"; // Default if not found
+    // ดึงข้อมูลจาก localStorage (ที่ควรเก็บหลัง login)
+    const name = localStorage.getItem("staffName") || "ชื่อผู้ใช้งาน";
+    const avatar = localStorage.getItem("staffAvatar") || "";
+
     setStaffName(name);
+    setAvatarUrl(avatar);
+
+    const onScroll = () => setIsSticky(window.scrollY > 50);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleScroll = () => {
-    if (window.scrollY > 50) {
-      setIsSticky(true);
-    } else {
-      setIsSticky(false);
-    }
-  };
-
-  useEffect(() => {
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-
-  // Handle Logout
   const handleLogout = () => {
-    // Clear relevant auth tokens or user data
-    localStorage.removeItem("staffName"); // Example: Remove staff name
-    // Redirect to login page (if applicable)
+    localStorage.removeItem("staffName");
+    localStorage.removeItem("staffAvatar");
     window.location.href = "/auth/login";
   };
 
   return (
     <>
       <header
-        className={`sticky top-0 z-[5] ${isSticky
-          ? "bg-lightgray dark:bg-dark shadow-md fixed w-full"
-          : "bg-transparent"
-          }`}
+        className={`sticky top-0 z-[5] ${
+          isSticky ? "bg-lightgray dark:bg-dark shadow-md" : "bg-transparent"
+        }`}
       >
         <Navbar
           fluid
-          className={` font-kanit rounded-none bg-transparent dark:bg-transparent py-4 sm:px-30 px-4`}
+          className="font-kanit rounded-none bg-transparent dark:bg-transparent py-4 sm:px-30 px-4"
         >
           <div className="flex gap-3 items-center justify-between w-full">
-            {/* Mobile Toggle Icon */}
+            {/* Left controls */}
             <div className="flex gap-2 items-center">
-              <span
+              {/* Mobile hamburger -> เปิด Drawer */}
+              <button
                 onClick={() => setIsOpen(true)}
-                className="h-10 w-10 flex text-black dark:text-white text-opacity-65 xl:hidden hover:text-primary hover:bg-lightprimary rounded-full justify-center items-center cursor-pointer"
+                className="h-10 w-10 xl:hidden inline-flex items-center justify-center rounded-full hover:bg-lightprimary"
+                aria-label="Open sidebar (mobile)"
               >
                 <Icon icon="solar:hamburger-menu-line-duotone" height={21} />
-              </span>
+              </button>
+
+              {/* Desktop hamburger -> toggle ย่อ/ขยาย Sidebar */}
+              <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className="h-10 w-10 hidden xl:inline-flex items-center justify-center rounded-full hover:bg-lightprimary"
+                aria-label="Toggle sidebar (desktop)"
+                title={open ? "Collapse sidebar" : "Expand sidebar"}
+              >
+                <Icon icon="solar:hamburger-menu-line-duotone" height={21} />
+              </button>
             </div>
 
-            {/* Staff Greeting and Logout */}
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-gray-100 ">
-              <Icon icon="solar:user-hand-up-bold" height={20} color="gray" />
+            {/* Right controls */}
+            <div className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium bg-gray-100">
+              {/* ✅ แสดงรูปโปรไฟล์ */}
+              {avatarUrl ? (
+                <img
+                  src={`${API_BASE}${avatarUrl}`}
+                  alt="avatar"
+                  className="w-8 h-8 rounded-full object-cover border"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-xs">
+                  ?
+                </div>
+              )}
+
               <span className="text-sm font-medium dark:text-white text-black">
                 สวัสดี: {staffName}
               </span>
+
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-white bg-red-500 hover:bg-red-600"
@@ -80,10 +100,10 @@ const Header = () => {
         </Navbar>
       </header>
 
-      {/* Mobile Sidebar */}
+      {/* Drawer (mobile) */}
       <Drawer open={isOpen} onClose={() => setIsOpen(false)} className="w-130">
         <Drawer.Items>
-          <MobileSidebar />
+          <MobileSidebar onClose={() => setIsOpen(false)} />
         </Drawer.Items>
       </Drawer>
     </>

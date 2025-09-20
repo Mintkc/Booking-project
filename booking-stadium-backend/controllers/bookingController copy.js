@@ -6,6 +6,7 @@ import isBetween from "dayjs/plugin/isBetween.js";
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import 'dayjs/locale/th.js'
+import { message } from "hawk/lib/client.js";
 
 dayjs.extend(isBetween);
 dayjs.locale('th');
@@ -128,6 +129,20 @@ export const bookStadium = async (req, res) => {
     } catch (error) {
         console.error("🚨 Server Error:", error);
         res.status(500).json({ message: "Server error", error });
+    }
+};
+
+export const getUserBookings = async (req, res) => {
+    try {
+        const  { userId } = req.params;
+
+        const bookings = await Booking.find({ userId })
+            .populate("stadiumId", "nameStadium imageUrl descriptionStadium contactStadium");
+
+        res.json(bookings);
+    } catch (err) {
+        console.error("getuserBookings error:", err);
+        res.status(500).json({ message: "server error"});
     }
 };
 

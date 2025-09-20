@@ -2,6 +2,7 @@
 import React from "react";
 import Sidebar from "./layout/vertical/sidebar/Sidebar";
 import Header from "./layout/vertical/header/Header";
+import { SidebarProvider, useSidebar } from "./layout/vertical/sidebar/useSidebar";
 
 export default function Layout({
   children,
@@ -9,18 +10,25 @@ export default function Layout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex w-full min-h-screen">
-      <div className="page-wrapper flex w-full">
-        {/* Header/sidebar */}
-        <Sidebar />
-        <div className="body-wrapper w-full bg-lightgray dark:bg-dark">
-          <Header />
-          {/* Body Content  */}
-          <div
-            className={`container mx-auto  py-30`}
-          >
-            {children}
-          </div>
+    <SidebarProvider>
+      <LayoutInner>{children}</LayoutInner>
+    </SidebarProvider>
+  );
+}
+
+function LayoutInner({ children }: { children: React.ReactNode }) {
+  const { open } = useSidebar();
+  return (
+    <div
+      className="flex w-full min-h-screen bg-transparent"
+      data-sidebar-type={open ? "mini-sidebar" : undefined}
+    >
+      <Sidebar />
+      <div className="w-full">
+        <Header />
+        {/* Body Content */}
+        <div className="container mx-auto py-30">
+          {children}
         </div>
       </div>
     </div>
