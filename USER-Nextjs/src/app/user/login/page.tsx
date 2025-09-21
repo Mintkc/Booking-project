@@ -30,30 +30,32 @@ export default function LoginPage() {
       router.push("/home");
     } catch (err: any) {
       const msg = err?.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
-      toast.error(msg);               // ✅ แสดงเฉพาะ Toast
+      toast.error(msg); // ✅ แสดงเฉพาะ Toast
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="relative min-h-screen">
-      {/* พื้นหลังสนาม + เลเยอร์ดำโปร่ง */}
-      <div className="absolute inset-0 bg-[url('/images/stadium.jpg')] bg-cover bg-center" />
+    <main className="relative min-h-screen w-full">
+      {/* ✅ พื้นหลังรูปเต็มจอ */}
+      <div className="absolute inset-0 w-full h-full bg-[url('/images/backgrounds/bg-football-stadium.png')] bg-no-repeat bg-cover bg-center" />
+
+      {/* ✅ เลเยอร์ดำโปร่ง */}
       <div className="absolute inset-0 bg-black/60" />
 
-      {/* การ์ดกึ่งโปร่ง กลับเหมือนเดิม */}
+      {/* ฟอร์ม Login */}
       <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
         <form
           onSubmit={handleLogin}
           className="w-full max-w-md rounded-2xl bg-black/60 backdrop-blur-sm p-6 text-white shadow-2xl"
         >
-          <h2 className="text-3xl font-extrabold text-center mb-1">เข้าสู่ระบบ</h2>
+          <h2 className="text-3xl font-extrabold text-center mb-1">
+            เข้าสู่ระบบ
+          </h2>
           <p className="text-center text-gray-300 text-sm mb-6">
             กรุณากรอกข้อมูลเพื่อเข้าใช้งานระบบ
           </p>
-
-          {/* ❌ ไม่แสดง error ในการ์ดแล้ว (เหลือแต่ Toast) */}
 
           <label className="block text-sm mb-1">อีเมล</label>
           <input
@@ -96,12 +98,18 @@ export default function LoginPage() {
           </button>
 
           <div className="mt-4 text-center space-y-2 text-sm">
-            <Link href="/user/reset-password" className="text-yellow-300 hover:underline font-semibold">
+            <Link
+              href="/user/reset-password"
+              className="text-yellow-300 hover:underline font-semibold"
+            >
               ลืมรหัสผ่าน?
             </Link>
             <p className="text-gray-200">
               ถ้ายังไม่มีบัญชี?{" "}
-              <Link href="/user/register" className="text-blue-300 hover:underline font-semibold">
+              <Link
+                href="/user/register"
+                className="text-blue-300 hover:underline font-semibold"
+              >
                 คลิกที่นี่
               </Link>
             </p>

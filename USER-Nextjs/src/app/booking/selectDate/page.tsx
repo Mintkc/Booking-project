@@ -230,7 +230,7 @@ const SelectDate = () => {
               title={status}
             >
               {dayjs(d).date()}
-              <span className="block text-xs mt-1">{disabled ? (isPast ? "ผ่านมาแล้ว" : status) : status}</span>
+              {!isPast && <span className="block text-xs mt-1">ว่าง</span>}
             </button>
           );
         })}

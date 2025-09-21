@@ -19,6 +19,7 @@ import statsRoutes from "./routes/statsRoutes.js";
 dotenv.config();
 
 const app = express();
+app.use("/uploads",express.static(path.join(process.cwd(), "uploads")));
 // app.use(compression());
 // app.use(helmet());
 

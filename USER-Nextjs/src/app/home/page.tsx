@@ -2,30 +2,63 @@
 
 import Navbar from "./components/Navbar";
 import BottomMenu from "./components/BottomMenu";
-import ProfilePage from "../profile/page"; // ✅ นำเข้าหน้า Profile
-import HistoryPage from "../history/page"; // ✅ นำเข้าหน้า Profile
+import ProfilePage from "../profile/page";
+import HistoryPage from "../history/page";
 import Booking from "./components/Booking";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+type Stadium = {
+  _id: string;
+  nameStadium: string;
+  descriptionStadium: string;
+  contactStadium: string;
+  statusStadium: "active" | "inactive" | "IsBooking";
+  imageUrl?: string; // <- สำคัญ
+};
 
 const HomePage = () => {
-    const [activePage, setActivePage] = useState("home"); // ✅ ควบคุมการเปลี่ยนหน้า
+  const [activePage, setActivePage] = useState<"home" | "history" | "profile">(
+    "home"
+  );
+  const [stadiums, setStadiums] = useState<Stadium[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-    return (
-        <div className="min-h-screen flex flex-col justify-between bg-gray-100 font-kanit">
-            {/* Navbar */}
-            <Navbar />
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE}/stadiums`,
+          { cache: "no-store" }
+        );
+        const data = await res.json();
+        setStadiums(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error("Fetch stadiums failed", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
-            {/* เนื้อหาส่วนกลาง */}
-            <div className="flex-grow p-2">
-                {activePage === "home" && <Booking />}
-                {activePage === "history" && <HistoryPage />} {/* ✅ แสดงหน้าโปรไฟล์ */}
-                {activePage === "profile" && <ProfilePage />} {/* ✅ แสดงหน้าโปรไฟล์ */}
-            </div>
+  return (
+    <div className="min-h-screen flex flex-col justify-between bg-gray-100 font-kanit">
+      {/* Navbar */}
+      <Navbar />
 
-            {/* Bottom Navigation */}
-            <BottomMenu setActivePage={setActivePage} />
-        </div>
-    );
+      {/* เนื้อหาส่วนกลาง */}
+      <div className="flex-grow p-2">
+        {activePage === "home" && (
+          <Booking stadiums={stadiums} loading={loading} />
+        )}
+        {activePage === "history" && <HistoryPage />}
+        {activePage === "profile" && <ProfilePage />}
+      </div>
+
+      {/* Bottom Navigation */}
+      <BottomMenu setActivePage={setActivePage} />
+    </div>
+  );
 };
 
 export default HomePage;
