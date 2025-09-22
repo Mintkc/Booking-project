@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: false,
   images: {
     remotePatterns: [
       {
@@ -11,7 +10,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "booking-stadium.online",
+        hostname: "booking-stadium.online/**",
       },
     ],
   },

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { getAvailableDates } from "@/utils/api";
+import { getAvailableDates, createBooking } from "@/utils/api";
 import { toast } from "react-toastify";
 import { CircleChevronLeft, CircleChevronRight } from "lucide-react";
 import dayjs from "dayjs";
@@ -28,30 +28,20 @@ const SelectDate = () => {
   const stadiumName = searchParams?.get("stadiumName") ?? "ไม่พบชื่อสนาม";
   const userId = searchParams?.get("userId") ?? "";
 
-  // สถานะวันจาก API
   const [dateStatusList, setDateStatusList] = useState<{ date: string; status: string }[]>([]);
-  // วันเริ่ม/สิ้นสุดที่เลือก
   const [selectedStartDate, setSelectedStartDate] = useState<string | null>(null);
   const [selectedEndDate, setSelectedEndDate] = useState<string | null>(null);
 
-  // เวลาเริ่ม/สิ้นสุด
   const [startTime, setStartTime] = useState("08:00");
   const [endTime, setEndTime] = useState("18:00");
-  // เปิด/ปิดช่องเวลา (แก้ error เดิม)
   const [isTimeActive, setIsTimeActive] = useState(false);
 
-  // ปี/เดือนที่กำลังแสดง
   const [currentYear, setCurrentYear] = useState(dayjs().year());
   const [currentMonth, setCurrentMonth] = useState(dayjs().month() + 1);
 
   // โหลดวันว่าง/ไม่ว่าง
   useEffect(() => {
-    if (!stadiumId.trim()) {
-      setSelectedStartDate(null);
-      setSelectedEndDate(null);
-      toast.error("ไม่พบข้อมูลสนาม");
-      return;
-    }
+    if (!stadiumId.trim()) return;
     (async () => {
       try {
         const data = await getAvailableDates(stadiumId, currentYear, currentMonth);
@@ -71,26 +61,21 @@ const SelectDate = () => {
         );
       } catch (error) {
         console.error("❌ Error fetching dates:", error);
-        // ถ้าอยากตัด popup error ทิ้ง ให้คอมเมนต์บรรทัดล่างนี้
-        // toast.error("โหลดข้อมูลวันที่ไม่สำเร็จ");
         setDateStatusList([]);
       }
     })();
   }, [stadiumId, currentYear, currentMonth]);
 
-  // list → map
   const statusMap = useMemo(() => {
     const m = new Map<string, "ว่าง" | "ไม่ว่าง">();
-    dateStatusList.forEach((d) => m.set(d.date, d.status === "ไม่ว่าง" ? "ไม่ว่าง" : "ว่าง"));
+    dateStatusList.forEach((d) => m.set(d.date, d.status as "ว่าง" | "ไม่ว่าง"));
     return m;
   }, [dateStatusList]);
 
-  // วันทั้งเดือน
   const monthStart = useMemo(() => dayjs(`${currentYear}-${String(currentMonth).padStart(2, "0")}-01`), [currentYear, currentMonth]);
   const monthEnd = useMemo(() => monthStart.endOf("month"), [monthStart]);
   const daysInMonth = monthEnd.date();
-  const firstDayIndex = monthStart.day(); // 0=Su
-
+  const firstDayIndex = monthStart.day();
   const todayStr = dayjs().format("YYYY-MM-DD");
 
   const monthDates = useMemo(() => {
@@ -101,7 +86,6 @@ const SelectDate = () => {
     return arr;
   }, [daysInMonth, monthStart]);
 
-  // เลือกวัน
   const handleDateSelect = (date: string, status: string) => {
     if (status !== "ว่าง") {
       toast.error("⛔ กรุณาเลือกวันที่ว่างเท่านั้น");
@@ -109,15 +93,13 @@ const SelectDate = () => {
     }
     if (dayjs(date).isBefore(dayjs(todayStr), "day")) return;
 
-    // เริ่มช่วงใหม่ หรือเริ่มเลือกครั้งแรก
     if (!selectedStartDate || (selectedStartDate && selectedEndDate)) {
       setSelectedStartDate(date);
       setSelectedEndDate(null);
-      setIsTimeActive(true); // เปิดช่องเวลาเมื่อเริ่มเลือก
+      setIsTimeActive(true);
       return;
     }
 
-    // ตั้งวันสิ้นสุด
     if (dayjs(date).isBefore(dayjs(selectedStartDate))) {
       setSelectedEndDate(selectedStartDate);
       setSelectedStartDate(date);
@@ -136,8 +118,8 @@ const SelectDate = () => {
     );
   };
 
-  // ไปหน้าถัดไป
-  const handleNext = () => {
+  // 🔑 กดปุ่ม "ยืนยันการจอง"
+  const handleBooking = async () => {
     if (!selectedStartDate) {
       toast.error("กรุณาเลือกวันที่");
       return;
@@ -146,27 +128,35 @@ const SelectDate = () => {
       toast.error("กรุณาเลือกวันที่สิ้นสุดก่อน");
       return;
     }
+    if (!userId) {
+      toast.error("⛔ ต้องเข้าสู่ระบบก่อนจอง");
+      return;
+    }
 
-    // ถ้าเลือกวันเดียว ต้องตรวจสอบเวลา
     const isSingleDay = !selectedEndDate || selectedStartDate === selectedEndDate;
-    if (isSingleDay) {
-      if (startTime >= endTime) {
-        toast.error("⛔ เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น");
-        return;
-      }
+    if (isSingleDay && startTime >= endTime) {
+      toast.error("⛔ เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น");
+      return;
     }
 
     const end = selectedEndDate ?? selectedStartDate;
-    const endTimeParam = !isSingleDay ? "" : endTime; // หลายวันไม่ต้องส่งเวลาสิ้นสุด
 
-    router.push(
-      `/booking/selectEquipment?stadiumId=${stadiumId}&stadiumName=${encodeURIComponent(
-        stadiumName
-      )}&userId=${userId}&startDate=${selectedStartDate}&endDate=${end}&startTime=${startTime}&endTime=${endTimeParam}`
-    );
+    try {
+      await createBooking({
+        userId,
+        stadiumId,
+        startDate: selectedStartDate,
+        endDate: end,
+        startTime,
+        endTime,
+      });
+      toast.success("✅ จองสำเร็จ");
+      router.push("/booking/history"); // ไปหน้าประวัติการจอง
+    } catch (err: any) {
+      toast.error("❌ " + (err.message || "ไม่สามารถจองได้"));
+    }
   };
 
-  // เปลี่ยนเดือน
   const handleMonthChange = (direction: "prev" | "next") => {
     setCurrentMonth((prev) => {
       let m = direction === "prev" ? prev - 1 : prev + 1;
@@ -205,12 +195,10 @@ const SelectDate = () => {
           <div key={d} className="text-gray-500">{d}</div>
         ))}
 
-        {/* ช่องว่างก่อนวันที่ 1 */}
         {Array.from({ length: firstDayIndex }, (_, i) => (
           <div key={`empty-${i}`} className="text-gray-300">-</div>
         ))}
 
-        {/* วันทั้งเดือน */}
         {monthDates.map((d) => {
           const status = statusMap.get(d) ?? "ว่าง";
           const isPast = dayjs(d).isBefore(dayjs(todayStr), "day");
@@ -230,7 +218,7 @@ const SelectDate = () => {
               title={status}
             >
               {dayjs(d).date()}
-              {!isPast && <span className="block text-xs mt-1">ว่าง</span>}
+              {!isPast && <span className="block text-xs mt-1">{status}</span>}
             </button>
           );
         })}
@@ -248,7 +236,6 @@ const SelectDate = () => {
         />
       </div>
 
-      {/* เวลา “สิ้นสุด” แสดงเฉพาะกรณีเลือกวันเดียว */}
       {selectedStartDate && (!selectedEndDate || selectedStartDate === selectedEndDate) && (
         <div className="mt-4">
           <label className="block text-lg font-bold text-gray-700">เลือกเวลาสิ้นสุด</label>
@@ -262,8 +249,8 @@ const SelectDate = () => {
         </div>
       )}
 
-      <button onClick={handleNext} className="w-full mt-6 bg-orange-500 text-white py-3 rounded-lg text-lg font-bold">
-        ต่อไป
+      <button onClick={handleBooking} className="w-full mt-6 bg-orange-500 text-white py-3 rounded-lg text-lg font-bold">
+        ยืนยันการจอง
       </button>
     </div>
   );

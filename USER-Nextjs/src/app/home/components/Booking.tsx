@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getAllStadiums } from "@/utils/api";
+import { getAllStadiums, API_BASE } from "@/utils/api";
 import { toast } from "react-toastify";
 import { Volleyball } from "lucide-react";
 import Image from "next/image";
@@ -15,13 +15,27 @@ const menuItems = [
   },
 ];
 
+// ✅ Component แสดงรูปพร้อม fallback
+function SafeImage({ src, alt }: { src: string; alt: string }) {
+  const [img, setImg] = useState(
+    src && src.trim() !== "" ? src : "/images/stadium-placeholder.jpg"
+  );
+  return (
+    <Image
+      src={img}
+      alt={alt}
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 50vw"
+      onError={() => setImg("/images/stadium-placeholder.jpg")}
+    />
+  );
+}
+
 const Booking = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("stadiums");
   const [stadiums, setStadiums] = useState<any[]>([]);
-  const [selectedStadiumId, setSelectedStadiumId] = useState<string | null>(
-    null
-  );
   const [userId, setUserId] = useState<string | null>(null);
 
   // ✅ โหลดข้อมูลสนาม
@@ -102,12 +116,12 @@ const Booking = () => {
           </h1>
           <div className="grid grid-cols-2 gap-4">
             {stadiums.map((stadium) => {
-              // ✅ เลือก URL รูป
+              // ✅ เลือก URL รูป (absolute หรือ relative)
               const imgSrc =
                 stadium.imageUrl && stadium.imageUrl.trim() !== ""
                   ? stadium.imageUrl.startsWith("http")
                     ? stadium.imageUrl
-                    : `${process.env.NEXT_PUBLIC_API_BASE}${stadium.imageUrl}`
+                    : `${API_BASE}${stadium.imageUrl}`
                   : "/images/stadium-placeholder.jpg";
 
               return (
@@ -117,13 +131,7 @@ const Booking = () => {
                 >
                   {/* ✅ รูปสนาม */}
                   <div className="relative w-full h-24">
-                    <Image
-                      src={imgSrc}
-                      alt={stadium.nameStadium}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                    />
+                    <SafeImage src={imgSrc} alt={stadium.nameStadium} />
                   </div>
 
                   {/* ✅ ข้อมูลสนาม */}
