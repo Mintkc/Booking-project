@@ -3,7 +3,7 @@
 import Navbar from "./components/Navbar";
 import BottomMenu from "./components/BottomMenu";
 import ProfilePage from "../profile/page";
-import HistoryPage from "../history/page";
+import HistoryContent from "../history/HistoryContent";
 import Booking from "./components/Booking";
 import { useEffect, useState } from "react";
 
@@ -51,12 +51,12 @@ const HomePage = () => {
         {activePage === "home" && (
           <Booking stadiums={stadiums} loading={loading} />
         )}
-        {activePage === "history" && <HistoryPage />}
+        {activePage === "history" && <HistoryContent />}
         {activePage === "profile" && <ProfilePage />}
       </div>
 
       {/* Bottom Navigation */}
-      <BottomMenu setActivePage={setActivePage} />
+      <BottomMenu activePage={activePage} onChange={(page) => setActivePage(page)} />
     </div>
   );
 };
