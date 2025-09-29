@@ -1,9 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Table, Modal, Button, Dropdown, TextInput } from "flowbite-react";
 import { Icon } from "@iconify/react";
-import { getAllStadiums, createStadium, updateStadium, deleteStadium } from "@/utils/api";
+import {
+  getAllStadiums,
+  createStadium,
+  updateStadium,
+  deleteStadium,
+  uploadStadiumImage,
+  deleteStadiumImage,
+} from "@/utils/api";
 import UploadStadiumImage from "src/app/components/dashboard/UploadStadiumImage";
 
 interface Stadium {
@@ -29,6 +36,51 @@ const StadiumPage = () => {
     contactStadium: "",
     statusStadium: "active",
   });
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const objectUrlRef = useRef<string | null>(null);
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5008";
+
+  const resolveImageUrl = (url?: string) => {
+    if (!url) return "";
+    return url.startsWith("http") ? url : `${API_BASE}${url}`;
+  };
+
+  const cleanupObjectUrl = () => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+  };
+
+  const setServerPreview = (relativePath?: string) => {
+    cleanupObjectUrl();
+    setImagePreview(resolveImageUrl(relativePath));
+  };
+
+  const handleImageSelection = (file: File | null) => {
+    cleanupObjectUrl();
+    if (file) {
+      const url = URL.createObjectURL(file);
+      objectUrlRef.current = url;
+      setImagePreview(url);
+      setImageFile(file);
+      setRemoveImage(false);
+    } else {
+      setImagePreview("");
+      setImageFile(null);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    cleanupObjectUrl();
+    setImagePreview("");
+    setImageFile(null);
+    setRemoveImage(Boolean(currentStadium?.imageUrl));
+  };
 
   // โหลดรายการสนาม
   const fetchStadiums = async () => {
@@ -40,18 +92,41 @@ const StadiumPage = () => {
     }
   };
 
+  useEffect(() => {
+    return () => {
+      cleanupObjectUrl();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // บันทึกสนาม
   const handleSave = async () => {
     try {
+      setIsSaving(true);
+      let stadiumId: string | undefined;
+
       if (currentStadium) {
-        await updateStadium(currentStadium._id, form);
+        const result = await updateStadium(currentStadium._id, form);
+        stadiumId = result?.stadium?._id || currentStadium._id;
       } else {
-        await createStadium({ ...form, statusStadium: "active" });
+        const result = await createStadium({ ...form, statusStadium: "active" });
+        stadiumId = result?.stadium?._id || result?._id;
       }
-      fetchStadiums();
+
+      if (stadiumId) {
+        if (imageFile) {
+          await uploadStadiumImage(stadiumId, imageFile);
+        } else if (removeImage) {
+          await deleteStadiumImage(stadiumId);
+        }
+      }
+
+      await fetchStadiums();
       closeModal();
     } catch (err) {
       console.error("Failed to save stadium:", err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -85,11 +160,24 @@ const StadiumPage = () => {
             statusStadium: "active",
           }
     );
+    setImageFile(null);
+    setRemoveImage(false);
+    setServerPreview(stadium?.imageUrl);
     setIsModalOpen(true);
   };
   const closeModal = () => {
     setIsModalOpen(false);
     setCurrentStadium(null);
+    setForm({
+      nameStadium: "",
+      descriptionStadium: "",
+      contactStadium: "",
+      statusStadium: "active",
+    });
+    cleanupObjectUrl();
+    setImagePreview("");
+    setImageFile(null);
+    setRemoveImage(false);
   };
   const openConfirmModal = (id: string) => setConfirmModal({ isOpen: true, id });
   const closeConfirmModal = () => setConfirmModal({ isOpen: false, id: null });
@@ -207,6 +295,40 @@ const StadiumPage = () => {
               value={form.contactStadium}
               onChange={(e) => setForm({ ...form, contactStadium: e.target.value })}
             />
+            <div>
+              <label className="block text-sm font-medium mb-1">รูปสนามกีฬา</label>
+              <div className="flex items-center gap-3">
+                <div className="w-20 h-20 rounded-md overflow-hidden border bg-gray-100">
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="stadium preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">ไม่มีรูป</div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 text-sm">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageSelection(e.target.files?.[0] ?? null)}
+                    disabled={isSaving}
+                    className="text-xs"
+                  />
+                  {(imagePreview || (currentStadium?.imageUrl && !removeImage)) && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="text-red-500 text-xs hover:underline"
+                      disabled={isSaving}
+                    >
+                      ลบรูป
+                    </button>
+                  )}
+                  {removeImage && !imageFile && (
+                    <span className="text-xs text-yellow-600">จะลบรูปเดิมหลังจากบันทึก</span>
+                  )}
+                </div>
+              </div>
+            </div>
             {currentStadium && (
               <div>
                 <label className="block text-sm font-medium mb-1">สถานะ</label>
@@ -225,12 +347,14 @@ const StadiumPage = () => {
         <Modal.Footer>
           <Button
             onClick={handleSave}
+            disabled={isSaving}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
           >
-            {currentStadium ? "บันทึกการแก้ไข" : "เพิ่มสนามกีฬา"}
+            {isSaving ? "กำลังบันทึก..." : currentStadium ? "บันทึกการแก้ไข" : "เพิ่มสนามกีฬา"}
           </Button>
           <Button
             onClick={closeModal}
+            disabled={isSaving}
             className="bg-gray-200 hover:bg-gray-300 text-black px-4 py-2 rounded-lg"
           >
             ยกเลิก

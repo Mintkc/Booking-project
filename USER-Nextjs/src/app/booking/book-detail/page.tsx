@@ -3,7 +3,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { createBooking } from "@/utils/api";
-import { Calendar, Package, MapPin, CheckCircle, User, Clock } from "lucide-react";
+import { Calendar, Package, MapPin, CheckCircle, User, Clock, ArrowLeft } from "lucide-react";
+import { toast } from "react-toastify";
 import dayjs from "dayjs";
 
 // ✅ กำหนด Type ให้ชัดเจน
@@ -46,9 +47,7 @@ const BookingDetail = () => {
 
     // ✅ กำหนด type `User | null` ให้ชัดเจน
     const [user, setUser] = useState<UserType | null>(null);
-    const [countdown, setCountdown] = useState(120); // 2 นาที
     const [loadingUser, setLoadingUser] = useState(true);
-    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -66,18 +65,15 @@ const BookingDetail = () => {
             setLoadingUser(false);
         }
 
-        const timer = setInterval(() => {
-            setCountdown((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timer);
     }, []);
+
+    const handleBack = () => {
+        if (typeof window !== "undefined" && window.history.length > 1) {
+            router.back();
+        } else {
+            router.push("/home");
+        }
+    };
 
     const handleBooking = async () => {
         if (!user) {
@@ -105,7 +101,8 @@ const BookingDetail = () => {
             // console.log("📩 API Response:", response);
 
             if (response?.success) {
-                setShowSuccessModal(true);
+                toast.success("✅ จองสำเร็จ");
+                router.push("/booking/history");
             } else {
                 alert(response.message || "❌ เกิดข้อผิดพลาด");
             }
@@ -115,12 +112,15 @@ const BookingDetail = () => {
         }
     };
 
-    const handleRedirectHome = () => {
-        router.push("/home");
-    };
-
     return (
         <div className="p-5 font-kanit max-w-[670px] mx-auto">
+            <button
+                onClick={handleBack}
+                className="flex items-center gap-2 text-orange-500 font-semibold mb-4"
+            >
+                <ArrowLeft size={20} />
+                ย้อนกลับ
+            </button>
             <h1 className="text-2xl font-bold text-center mb-4 flex items-center justify-center gap-2">
                 <CheckCircle size={24} className="text-orange-500" /> ยืนยันการจอง
             </h1>
@@ -176,15 +176,7 @@ const BookingDetail = () => {
             ) : (
                 <p className="text-gray-500">ไม่พบข้อมูลผู้ใช้</p>
             )}
-            {/* ✅ ปุ่ม "จองเลย" และตัวจับเวลา */}
-            <div className="max-w-[670px] mx-auto fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4 flex flex-col items-center mt-20 gap-2 rounded-t-xl">
-                <div className="text-lg font-bold text-black flex flex-col items-center">
-                    <span>กรุณากดยืนยันก่อนหมดเวลา</span>
-                    <span className="text-red-500 text-xl font-extrabold">
-                        {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, "0")}
-                    </span>
-                </div>
-
+            <div className="max-w-[670px] mx-auto fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4 flex items-center justify-center rounded-t-xl">
                 <button
                     onClick={handleBooking}
                     className="w-full max-w-xs px-6 py-3 rounded-xl text-lg font-semibold bg-orange-500 text-white hover:bg-orange-600 transition"
@@ -192,23 +184,6 @@ const BookingDetail = () => {
                     จองเลย
                 </button>
             </div>
-
-            {/* ✅ Modal Success แจ้งจองสำเร็จ */}
-            {showSuccessModal && (
-                <div className="max-w-[670px] mx-auto fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white p-5 rounded-md text-center shadow-lg w-80">
-                        <CheckCircle className="text-green-500 mx-auto mb-3" size={48} />
-                        <h2 className="text-lg font-bold">✅ จองสำเร็จ!</h2>
-                        <p className="text-gray-600 mt-2">คุณได้ทำการจองสนามเรียบร้อย</p>
-                        <button
-                            onClick={handleRedirectHome}
-                            className="mt-4 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition"
-                        >
-                            ตกลง
-                        </button>
-                    </div>
-                </div>
-            )}
 
         </div>
     );

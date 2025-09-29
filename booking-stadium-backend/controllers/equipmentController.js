@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import Equipment from "../models/Equipment.js";
 
 // ✅ เพิ่มอุปกรณ์ใหม่
@@ -15,11 +17,16 @@ export const createEquipment = async (req, res) => {
 export const updateEquipment = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, quantity, status } = req.body;
+        const { name, quantity, status, imageUrl } = req.body;
+
+        const payload = { name, quantity, status };
+        if (typeof imageUrl !== "undefined") {
+            payload.imageUrl = imageUrl;
+        }
 
         const updatedEquipment = await Equipment.findByIdAndUpdate(
             id,
-            { name, quantity, status },
+            payload,
             { new: true, runValidators: true }
         );
 
@@ -46,7 +53,20 @@ export const getEquipments = async (req, res) => {
 // ✅ ลบอุปกรณ์
 export const deleteEquipment = async (req, res) => {
     try {
-        await Equipment.findByIdAndDelete(req.params.id);
+        const equipment = await Equipment.findById(req.params.id);
+        if (!equipment) {
+            return res.status(404).json({ message: "Equipment not found" });
+        }
+
+        if (equipment.imageUrl) {
+            const relative = equipment.imageUrl.replace(/^[\\/]/, "");
+            const filePath = path.join(process.cwd(), relative);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+
+        await equipment.deleteOne();
         res.status(200).json({ message: "Equipment deleted successfully" });
     } catch (error) {
         res.status(500).json({ message: "Server error", error });

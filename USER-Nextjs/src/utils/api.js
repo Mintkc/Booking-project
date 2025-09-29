@@ -291,12 +291,29 @@ export const createBooking = async (payload) => {
   }
 };
 
+// โหลดการจองทั้งหมดของสนาม เพื่อนำไปกรองตามวันที่ในฝั่ง client
+export const getStadiumBookings = async (stadiumId) => {
+  try {
+    if (!stadiumId) return [];
+    const res = await axios.get(`${API_URL}/bookings`, { params: { stadiumId } });
+    const raw = res.data;
+    if (!Array.isArray(raw)) return [];
+    return raw.filter((item) => {
+      const id = typeof item?.stadiumId === "object" ? item.stadiumId?._id : item?.stadiumId;
+      return id?.toString() === stadiumId.toString();
+    });
+  } catch (error) {
+    if (error?.response?.status === 404) return [];
+    throw error.response?.data || { message: "โหลดข้อมูลการจองไม่สำเร็จ" };
+  }
+};
+
 // โหลด “วันไม่ว่าง” (หรือให้ backend คืน reservedDates)
 // GET /api/bookings/available-dates?stadiumId=...
-export const getAvailableDates = async (stadiumId) => {
+export const getAvailableDates = async (stadiumId, year, month) => {
   try {
     const res = await axios.get(`${API_URL}/bookings/available-dates`, {
-      params: { stadiumId },
+      params: { stadiumId, year, month },
     });
     return res.data; // { success: true, reservedDates: ["2025-09-10", ...] }
   } catch (error) {
@@ -324,5 +341,3 @@ export const getReturnedBookings = async () => {
     return [];
   }
 };
-
-
