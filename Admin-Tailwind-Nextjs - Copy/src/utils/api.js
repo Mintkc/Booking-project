@@ -94,6 +94,30 @@ export const deleteEquipment = async (id) => {
     }
 };
 
+// อัปโหลดรูปอุปกรณ์
+export const uploadEquipmentImage = async (id, file) => {
+    try {
+        const formData = new FormData();
+        formData.append("image", file);
+        const response = await axios.post(`${API_URL}/equipments/${id}/image`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: "Failed to upload equipment image" };
+    }
+};
+
+// ลบรูปอุปกรณ์
+export const deleteEquipmentImage = async (id) => {
+    try {
+        const response = await axios.delete(`${API_URL}/equipments/${id}/image`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: "Failed to delete equipment image" };
+    }
+};
+
 // ✅ ฟังก์ชันสำหรับ Stadium
 
 // ดึงข้อมูลสนามทั้งหมด
@@ -133,6 +157,30 @@ export const deleteStadium = async (id) => {
         return response.data;
     } catch (error) {
         throw error.response?.data || { message: "Failed to delete stadium" };
+    }
+};
+
+// อัปโหลดรูปสนามกีฬา
+export const uploadStadiumImage = async (id, file) => {
+    try {
+        const formData = new FormData();
+        formData.append("image", file);
+        const response = await axios.post(`${API_URL}/stadiums/${id}/image`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: "Failed to upload stadium image" };
+    }
+};
+
+// ลบรูปสนามกีฬา
+export const deleteStadiumImage = async (id) => {
+    try {
+        const response = await axios.delete(`${API_URL}/stadiums/${id}/image`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: "Failed to delete stadium image" };
     }
 };
 
