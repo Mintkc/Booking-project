@@ -225,176 +225,196 @@ const BookingDetail = () => {
     };
 
     return (
-        <div className="p-5 pb-28 font-kanit max-w-[670px] mx-auto">
-            <button
-                onClick={handleBack}
-                className="flex items-center gap-2 text-orange-500 font-semibold mb-4"
-            >
-                <ArrowLeft size={20} />
-                ย้อนกลับ
-            </button>
-            <h1 className="text-2xl font-bold text-center mb-4 flex items-center justify-center gap-2">
-                <CheckCircle size={24} className="text-orange-500" /> ยืนยันการจอง
-            </h1>
+        <div className="relative min-h-screen font-kanit">
+            <div className="absolute inset-0">
+                <Image
+                    src={stadiumImgSrc}
+                    alt={stadiumName}
+                    fill
+                    priority
+                    className="object-cover"
+                    sizes="100vw"
+                    onError={() => setStadiumImgSrc(DEFAULT_STADIUM_IMAGE)}
+                />
+                <div className="absolute inset-0 bg-black/55" aria-hidden="true" />
+            </div>
 
-            <div className="space-y-4">
-                <section className="bg-white p-4 rounded-xl shadow-sm border border-orange-200">
-                    <div className="flex items-center gap-2 mb-3">
-                        <MapPin className="text-orange-500" size={20} />
-                        <h2 className="text-lg font-bold">สนามที่จอง & รายละเอียด</h2>
-                    </div>
-                    <div className="space-y-4">
-                        <div className="relative w-full h-52 sm:h-60 rounded-2xl overflow-hidden bg-gray-100">
-                            <Image
-                                src={stadiumImgSrc}
-                                alt={stadiumName}
-                                fill
-                                className="object-cover"
-                                sizes="(max-width: 768px) 100vw, 360px"
-                                onError={() => setStadiumImgSrc(DEFAULT_STADIUM_IMAGE)}
-                            />
-                        </div>
+            <div className="relative z-10 px-4 pt-20 pb-32 max-w-[720px] mx-auto">
+                <div className="backdrop-blur-sm bg-white/85 rounded-2xl shadow-xl p-5">
+                    <button
+                        onClick={handleBack}
+                        className="flex items-center gap-2 text-orange-500 font-semibold mb-4"
+                    >
+                        <ArrowLeft size={20} />
+                        ย้อนกลับ
+                    </button>
+                    <h1 className="text-2xl font-bold text-center mb-4 flex items-center justify-center gap-2">
+                        <CheckCircle size={24} className="text-orange-500" /> ยืนยันการจอง
+                    </h1>
 
-                        <div className="rounded-lg border border-orange-100 bg-orange-50 p-4 space-y-3">
-                            <p className="text-sm text-orange-600 uppercase tracking-wide">สนามที่เลือก</p>
-                            <p className="text-2xl font-semibold text-gray-900">{stadiumName}</p>
-                            <div className="inline-flex items-center gap-2 text-sm text-orange-600 bg-white border border-orange-200 px-3 py-2 rounded-full">
-                                <CheckCircle size={16} />
-                                พร้อมใช้งานสำหรับการจองนี้
+                    <div className="space-y-5">
+                        <section className="bg-white/95 p-4 rounded-xl shadow border border-orange-200">
+                            <div className="flex items-center gap-2 mb-3">
+                                <MapPin className="text-orange-500" size={20} />
+                                <h2 className="text-lg font-bold">สนามที่จอง & รายละเอียด</h2>
                             </div>
-                        </div>
-
-                        <div className="rounded-lg border border-orange-100 bg-gradient-to-r from-orange-50 to-orange-100 p-4 space-y-4">
-                            <p className="text-sm text-orange-700 uppercase tracking-wide">รายละเอียดการใช้งาน</p>
-                            <div className="grid gap-3">
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                    <div className="bg-white/80 border border-orange-200 rounded-lg p-3">
-                                        <p className="text-xs text-orange-600 uppercase tracking-wide">วันที่เริ่ม</p>
-                                        <p className="text-base font-semibold text-gray-900">{dayjs(startDate).format("DD/MM/YYYY")}</p>
-                                    </div>
-                                    <div className="bg-white/80 border border-orange-200 rounded-lg p-3">
-                                        <p className="text-xs text-orange-600 uppercase tracking-wide">วันที่สิ้นสุด</p>
-                                        <p className="text-base font-semibold text-gray-900">{dayjs(endDate).format("DD/MM/YYYY")}</p>
-                                    </div>
+                            <div className="space-y-4">
+                                <div className="relative w-full h-52 sm:h-60 rounded-2xl overflow-hidden bg-gray-100">
+                                    <Image
+                                        src={stadiumImgSrc}
+                                        alt={stadiumName}
+                                        fill
+                                        className="object-cover"
+                                        sizes="(max-width: 768px) 100vw, 360px"
+                                        onError={() => setStadiumImgSrc(DEFAULT_STADIUM_IMAGE)}
+                                    />
                                 </div>
-                                <div className="bg-white/80 border border-orange-200 rounded-lg p-3 flex items-center gap-2">
-                                    <Clock className="text-orange-500" size={18} />
-                                    <div>
-                                        <p className="text-xs text-orange-600 uppercase tracking-wide">ช่วงเวลา</p>
-                                        <p className="text-base font-semibold text-gray-900">{startTime} - {endTime}</p>
+
+                                <div className="rounded-lg border border-orange-100 bg-orange-50/70 p-4 space-y-3">
+                                    <p className="text-sm text-orange-600 uppercase tracking-wide">สนามที่เลือก</p>
+                                    <p className="text-2xl font-semibold text-gray-900">{stadiumName}</p>
+                                    <div className="inline-flex items-center gap-2 text-sm text-orange-600 bg-white border border-orange-200 px-3 py-2 rounded-full">
+                                        <CheckCircle size={16} />
+                                        พร้อมใช้งานสำหรับการจองนี้
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
 
-                <section className="bg-white p-4 rounded-xl shadow-sm border border-orange-200">
-                    <div className="flex items-center gap-2 mb-3">
-                        <Package className="text-orange-500" size={20} />
-                        <h2 className="text-lg font-bold">รายการอุปกรณ์</h2>
-                    </div>
-                    {selectedEquipment.length > 0 ? (
-                        <div className="space-y-4">
-                            <div className="relative">
-                                <EquipmentHeroImage imageUrl={currentEquipment?.imageUrl} name={currentEquipment?.name ?? "equipment image"} />
-                                {selectedEquipment.length > 1 && (
-                                    <>
-                                        <button
-                                            onClick={handlePrevEquipment}
-                                            className="absolute top-1/2 left-3 -translate-y-1/2 bg-white/80 hover:bg-white text-orange-500 p-2 rounded-full shadow"
-                                            aria-label="Previous equipment"
-                                        >
-                                            <ChevronLeft size={20} />
-                                        </button>
-                                        <button
-                                            onClick={handleNextEquipment}
-                                            className="absolute top-1/2 right-3 -translate-y-1/2 bg-white/80 hover:bg-white text-orange-500 p-2 rounded-full shadow"
-                                            aria-label="Next equipment"
-                                        >
-                                            <ChevronRight size={20} />
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-
-                            <div className="rounded-lg border border-orange-100 bg-orange-50 p-4">
-                                <p className="text-sm text-orange-600 uppercase tracking-wide">อุปกรณ์ที่ {equipmentIndex + 1} จาก {selectedEquipment.length}</p>
-                                <p className="text-xl font-semibold text-gray-900 mt-1">{currentEquipment?.name}</p>
-                                <p className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-white border border-orange-200 rounded-full text-sm font-medium text-orange-600">
-                                    <Package size={16} /> จำนวน: {currentEquipment?.quantity}
-                                </p>
-                            </div>
-
-                            {selectedEquipment.length > 1 && (
-                                <div className="flex gap-3 overflow-x-auto pb-2">
-                                    {selectedEquipment.map((item, idx) => (
-                                        <button
-                                            key={item.equipmentId}
-                                            onClick={() => setEquipmentIndex(idx)}
-                                            className={`flex flex-col items-center gap-2 p-2 border rounded-lg min-w-[88px] transition ${
-                                                idx === equipmentIndex
-                                                    ? "border-orange-400 bg-orange-50"
-                                                    : "border-orange-100 bg-white hover:border-orange-300"
-                                            }`}
-                                            aria-label={`เลือก ${item.name}`}
-                                        >
-                                            <EquipmentPreview imageUrl={item.imageUrl} name={item.name} />
-                                            <span className="text-xs font-medium text-gray-700 text-center line-clamp-2">
-                                                {item.name}
-                                            </span>
-                                            <span className="text-xs text-orange-500 font-semibold">x{item.quantity}</span>
-                                        </button>
-                                    ))}
+                                <div className="rounded-lg border border-orange-100 bg-gradient-to-r from-orange-50/70 to-orange-100/70 p-4 space-y-4">
+                                    <p className="text-sm text-orange-700 uppercase tracking-wide">รายละเอียดการใช้งาน</p>
+                                    <div className="grid gap-3">
+                                        <div className="grid gap-3 sm:grid-cols-2">
+                                            <div className="bg-white/80 border border-orange-200 rounded-lg p-3">
+                                                <p className="text-xs text-orange-600 uppercase tracking-wide">วันที่เริ่ม</p>
+                                                <p className="text-base font-semibold text-gray-900">{dayjs(startDate).format("DD/MM/YYYY")}</p>
+                                            </div>
+                                            <div className="bg-white/80 border border-orange-200 rounded-lg p-3">
+                                                <p className="text-xs text-orange-600 uppercase tracking-wide">วันที่สิ้นสุด</p>
+                                                <p className="text-base font-semibold text-gray-900">{dayjs(endDate).format("DD/MM/YYYY")}</p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white/80 border border-orange-200 rounded-lg p-3 flex items-center gap-2">
+                                            <Clock className="text-orange-500" size={18} />
+                                            <div>
+                                                <p className="text-xs text-orange-600 uppercase tracking-wide">ช่วงเวลา</p>
+                                                <p className="text-base font-semibold text-gray-900">{startTime} - {endTime}</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
+                        </section>
+
+                        <section className="bg-white/95 p-4 rounded-xl shadow border border-orange-200">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Package className="text-orange-500" size={20} />
+                                <h2 className="text-lg font-bold">รายการอุปกรณ์</h2>
+                            </div>
+                            {selectedEquipment.length > 0 ? (
+                                <div className="space-y-4">
+                                    <div className="relative">
+                                        <EquipmentHeroImage imageUrl={currentEquipment?.imageUrl} name={currentEquipment?.name ?? "equipment image"} />
+                                        {selectedEquipment.length > 1 && (
+                                            <>
+                                                <button
+                                                    onClick={handlePrevEquipment}
+                                                    className="absolute top-1/2 left-3 -translate-y-1/2 bg-white/80 hover:bg-white text-orange-500 p-2 rounded-full shadow"
+                                                    aria-label="Previous equipment"
+                                                >
+                                                    <ChevronLeft size={20} />
+                                                </button>
+                                                <button
+                                                    onClick={handleNextEquipment}
+                                                    className="absolute top-1/2 right-3 -translate-y-1/2 bg-white/80 hover:bg-white text-orange-500 p-2 rounded-full shadow"
+                                                    aria-label="Next equipment"
+                                                >
+                                                    <ChevronRight size={20} />
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    <div className="rounded-lg border border-orange-100 bg-orange-50/70 p-4">
+                                        <p className="text-sm text-orange-600 uppercase tracking-wide">อุปกรณ์ที่ {equipmentIndex + 1} จาก {selectedEquipment.length}</p>
+                                        <p className="text-xl font-semibold text-gray-900 mt-1">{currentEquipment?.name}</p>
+                                        <p className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-white border border-orange-200 rounded-full text-sm font-medium text-orange-600">
+                                            <Package size={16} /> จำนวน: {currentEquipment?.quantity}
+                                        </p>
+                                    </div>
+
+                                    {selectedEquipment.length > 1 && (
+                                        <div className="flex gap-3 overflow-x-auto pb-2">
+                                            {selectedEquipment.map((item, idx) => (
+                                                <button
+                                                    key={item.equipmentId}
+                                                    onClick={() => setEquipmentIndex(idx)}
+                                                    className={`flex flex-col items-center gap-2 p-2 border rounded-lg min-w-[88px] transition ${
+                                                        idx === equipmentIndex
+                                                            ? "border-orange-400 bg-orange-50"
+                                                            : "border-orange-100 bg-white hover:border-orange-300"
+                                                    }`}
+                                                    aria-label={`เลือก ${item.name}`}
+                                                >
+                                                    <EquipmentPreview imageUrl={item.imageUrl} name={item.name} />
+                                                    <span className="text-xs font-medium text-gray-700 text-center line-clamp-2">
+                                                        {item.name}
+                                                    </span>
+                                                    <span className="text-xs text-orange-500 font-semibold">x{item.quantity}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="text-gray-500">ไม่ได้เลือกอุปกรณ์</p>
                             )}
-                        </div>
-                    ) : (
-                        <p className="text-gray-500">ไม่ได้เลือกอุปกรณ์</p>
-                    )}
-                </section>
+                        </section>
 
-                <section className="bg-white p-4 rounded-xl shadow-sm border border-orange-200">
-                    <div className="flex items-center gap-2 mb-3">
-                        <User className="text-orange-500" size={20} />
-                        <h2 className="text-lg font-bold">ข้อมูลผู้จอง</h2>
+                        <section className="bg-white/95 p-4 rounded-xl shadow border border-orange-200">
+                            <div className="flex items-center gap-2 mb-3">
+                                <User className="text-orange-500" size={20} />
+                                <h2 className="text-lg font-bold">ข้อมูลผู้จอง</h2>
+                            </div>
+                            {loadingUser ? (
+                                <p className="text-gray-500">กำลังโหลดข้อมูลผู้ใช้...</p>
+                            ) : user ? (
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <div>
+                                        <p className="text-xs text-orange-600 uppercase tracking-wide">ชื่อผู้จอง</p>
+                                        <p className="text-base font-semibold text-gray-900">{user.fullname}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-orange-600 uppercase tracking-wide">อีเมล</p>
+                                        <p className="text-base text-gray-800">{user.email}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-orange-600 uppercase tracking-wide">สาขาวิชา</p>
+                                        <p className="text-base text-gray-800">{user.fieldOfStudy}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-orange-600 uppercase tracking-wide">ปีการศึกษา</p>
+                                        <p className="text-base text-gray-800">{user.year}</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-gray-500">ไม่พบข้อมูลผู้ใช้</p>
+                            )}
+                        </section>
                     </div>
-                    {loadingUser ? (
-                        <p className="text-gray-500">กำลังโหลดข้อมูลผู้ใช้...</p>
-                    ) : user ? (
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <div>
-                                <p className="text-xs text-orange-600 uppercase tracking-wide">ชื่อผู้จอง</p>
-                                <p className="text-base font-semibold text-gray-900">{user.fullname}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-orange-600 uppercase tracking-wide">อีเมล</p>
-                                <p className="text-base text-gray-800">{user.email}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-orange-600 uppercase tracking-wide">สาขาวิชา</p>
-                                <p className="text-base text-gray-800">{user.fieldOfStudy}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-orange-600 uppercase tracking-wide">ปีการศึกษา</p>
-                                <p className="text-base text-gray-800">{user.year}</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <p className="text-gray-500">ไม่พบข้อมูลผู้ใช้</p>
-                    )}
-                </section>
+                </div>
             </div>
 
-            <div className="max-w-[670px] mx-auto fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4 flex items-center justify-center rounded-t-xl">
-                <button
-                    onClick={handleBooking}
-                    className="w-full max-w-xs px-6 py-3 rounded-xl text-lg font-semibold bg-orange-500 text-white hover:bg-orange-600 transition"
-                >
-                    จองเลย
-                </button>
+            <div className="fixed bottom-0 left-0 right-0 z-20">
+                <div className="max-w-[720px] mx-auto px-4 pb-4">
+                    <div className="backdrop-blur-sm bg-white/85 shadow-2xl p-4 rounded-2xl flex items-center justify-center">
+                        <button
+                            onClick={handleBooking}
+                            className="w-full max-w-xs px-6 py-3 rounded-xl text-lg font-semibold bg-orange-500 text-white hover:bg-orange-600 transition"
+                        >
+                            จองเลย
+                        </button>
+                    </div>
+                </div>
             </div>
-
         </div>
     );
 };
