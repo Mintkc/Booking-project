@@ -67,7 +67,11 @@ const Booking = () => {
   const handleComingSoon = () => toast.info("🚀 ฟังก์ชันนี้กำลังอัปเดต");
 
   // ✅ เมื่อกดปุ่ม "จองสนามนี้"
-  const handleSelectStadium = (stadiumId: string, stadiumName: string) => {
+  const handleSelectStadium = (
+    stadiumId: string,
+    stadiumName: string,
+    stadiumImage: string
+  ) => {
     if (!userId) {
       toast.error("⛔ กรุณาเข้าสู่ระบบก่อนจองสนาม");
       return;
@@ -76,7 +80,7 @@ const Booking = () => {
     router.push(
       `/booking/selectDate?stadiumId=${stadiumId}&stadiumName=${encodeURIComponent(
         stadiumName
-      )}&userId=${userId}`
+      )}&stadiumImage=${encodeURIComponent(stadiumImage)}&userId=${userId}`
     );
   };
 
@@ -148,7 +152,11 @@ const Booking = () => {
                     <button
                       className="mt-3 w-full bg-orange-500 text-white py-2 rounded-md text-sm font-semibold hover:bg-orange-600 transition"
                       onClick={() =>
-                        handleSelectStadium(stadium._id, stadium.nameStadium)
+                        handleSelectStadium(
+                          stadium._id,
+                          stadium.nameStadium,
+                          imgSrc
+                        )
                       }
                     >
                       จองสนามนี้

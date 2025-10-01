@@ -123,20 +123,40 @@ const BookingHistory = () => {
             {booking.status === "Return Success" && "🔄 คืนอุปกรณ์สำเร็จ"}
           </p>
 
-          {booking.equipment.length > 0 && (
-            <div className="mt-3">
+          <div className="mt-3">
+            <div className="flex items-center justify-between gap-2">
               <h3 className="text-md font-bold flex items-center gap-2">
                 <Package className="text-orange-500" size={18} /> อุปกรณ์ที่ใช้
               </h3>
-              <ul className="text-gray-700 ml-4">
-                {booking.equipment.map((item, index) => (
-                  <li key={index}>
-                    {item.equipmentId?.name || "ไม่พบข้อมูล"} x{item.quantity}
-                  </li>
-                ))}
-              </ul>
+              {booking.equipment.length > 0 && (
+                <span className="text-sm text-gray-500">
+                  {booking.equipment.length} รายการ
+                </span>
+              )}
             </div>
-          )}
+
+            {booking.equipment.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {booking.equipment.map((item, index) => {
+                  const name = item.equipmentId?.name || "ไม่พบข้อมูล";
+                  const quantity = Number(item.quantity) || 0;
+                  return (
+                    <div
+                      key={`${item.equipmentId?.name ?? "unknown"}-${index}`}
+                      className="flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 shadow-sm"
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-gray-800">{name}</span>
+                        <span className="text-xs text-gray-600">จำนวน x{quantity}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-gray-500">ไม่มีข้อมูลอุปกรณ์สำหรับการจองนี้</p>
+            )}
+          </div>
 
           {booking.status === "pending" && (
             <button
@@ -174,4 +194,3 @@ const BookingHistory = () => {
 };
 
 export default HistoryContent;
-

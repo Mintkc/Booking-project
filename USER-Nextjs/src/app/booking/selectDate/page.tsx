@@ -44,6 +44,7 @@ const SelectDate = () => {
   const stadiumId = searchParams?.get("stadiumId") ?? "";
   const stadiumName = searchParams?.get("stadiumName") ?? "ไม่พบชื่อสนาม";
   const userId = searchParams?.get("userId") ?? "";
+  const stadiumImage = searchParams?.get("stadiumImage") ?? "";
 
   const [dateStatusList, setDateStatusList] = useState<{ date: string; status: string }[]>([]);
   const [selectedStartDate, setSelectedStartDate] = useState<string | null>(null);
@@ -220,6 +221,7 @@ const SelectDate = () => {
       endDate: end,
       startTime,
       endTime,
+      ...(stadiumImage ? { stadiumImage } : {}),
     });
 
     router.push(`/booking/selectEquipment?${params.toString()}`);
