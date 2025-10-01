@@ -63,6 +63,7 @@ const SelectEquipment = () => {
     const endDate = searchParams?.get("endDate") ?? "";
     const startTime = searchParams?.get("startTime") ?? "";
     const endTime = searchParams?.get("endTime") ?? "";
+    const stadiumImage = searchParams?.get("stadiumImage") ?? "";
     const equipmentParam = searchParams?.get("equipment");
 
     const initialSelectedEquipment = useMemo(() => {
@@ -74,6 +75,7 @@ const SelectEquipment = () => {
                 equipmentId: String(item.equipmentId),
                 name: String(item.name || ""),
                 quantity: Number(item.quantity) || 0,
+                imageUrl: item.imageUrl ? String(item.imageUrl) : undefined,
             }));
         } catch (error) {
             console.error("❌ Failed to parse equipment param", error);
@@ -82,7 +84,7 @@ const SelectEquipment = () => {
     }, [equipmentParam]);
 
     const [equipmentList, setEquipmentList] = useState<EquipmentItem[]>([]);
-    const [selectedEquipment, setSelectedEquipment] = useState<{ equipmentId: string; name: string; quantity: number }[]>(initialSelectedEquipment);
+    const [selectedEquipment, setSelectedEquipment] = useState<{ equipmentId: string; name: string; quantity: number; imageUrl?: string }[]>(initialSelectedEquipment);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -104,17 +106,19 @@ const SelectEquipment = () => {
         fetchEquipment();
     }, []);
 
-    const handleIncrease = (equipmentId: string, name: string, maxQuantity: number) => {
+    const handleIncrease = (equipmentId: string, name: string, maxQuantity: number, imageUrl?: string) => {
         setSelectedEquipment((prev) => {
             const existing = prev.find((item) => item.equipmentId === equipmentId);
             if (existing) {
                 const newQuantity = existing.quantity + 1;
                 if (newQuantity > maxQuantity) return prev;
                 return prev.map((item) =>
-                    item.equipmentId === equipmentId ? { ...item, quantity: newQuantity } : item
+                    item.equipmentId === equipmentId
+                        ? { ...item, quantity: newQuantity, imageUrl: item.imageUrl ?? imageUrl }
+                        : item
                 );
             } else {
-                return [...prev, { equipmentId, name, quantity: 1 }];
+                return [...prev, { equipmentId, name, quantity: 1, imageUrl }];
             }
         });
     };
@@ -149,6 +153,7 @@ const SelectEquipment = () => {
                 endDate,
                 startTime,
                 endTime,
+                ...(stadiumImage ? { stadiumImage } : {}),
             });
             router.push(`/booking/selectDate?${params.toString()}`);
         }
@@ -156,8 +161,11 @@ const SelectEquipment = () => {
 
      // ✅ ฟังก์ชันไปหน้าถัดไป (เพิ่ม startTime & endTime)
      const handleNext = () => {
+        const stadiumImageParam = stadiumImage
+            ? `&stadiumImage=${encodeURIComponent(stadiumImage)}`
+            : "";
         router.push(
-            `/booking/book-detail?stadiumId=${stadiumId}&stadiumName=${encodeURIComponent(stadiumName)}&userId=${userId}&startDate=${startDate}&endDate=${endDate}&startTime=${startTime}&endTime=${endTime}${equipmentQuery}`
+            `/booking/book-detail?stadiumId=${stadiumId}&stadiumName=${encodeURIComponent(stadiumName)}&userId=${userId}&startDate=${startDate}&endDate=${endDate}&startTime=${startTime}&endTime=${endTime}${equipmentQuery}${stadiumImageParam}`
         );
     };
 
@@ -205,7 +213,7 @@ const SelectEquipment = () => {
                                     </button>
                                     <span className="text-lg font-bold">{selectedCount}</span>
                                     <button
-                                        onClick={() => handleIncrease(item._id, item.name, item.quantity)}
+                                        onClick={() => handleIncrease(item._id, item.name, item.quantity, item.imageUrl)}
                                         className={`text-gray-500 ${isMax ? "opacity-50 cursor-not-allowed" : "hover:text-orange-500"}`}
                                         disabled={isMax}
                                     >
