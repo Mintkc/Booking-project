@@ -15,11 +15,21 @@ type EquipmentItem = {
 };
 
 const DEFAULT_EQUIPMENT_IMAGE = "/images/products/s1.jpg";
+const DEFAULT_STADIUM_IMAGE = "/images/stadium-placeholder.jpg";
 
 const resolveImageSrc = (imageUrl?: string) => {
     if (!imageUrl || imageUrl.trim() === "") return DEFAULT_EQUIPMENT_IMAGE;
     const trimmed = imageUrl.trim();
     if (trimmed.startsWith("http")) return trimmed;
+    return `${API_BASE}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
+};
+
+const resolveStadiumImage = (imageUrl: string) => {
+    if (!imageUrl || imageUrl.trim() === "") return DEFAULT_STADIUM_IMAGE;
+    const trimmed = imageUrl.trim();
+    if (trimmed.startsWith("/images/")) return trimmed;
+    if (trimmed.startsWith("http")) return trimmed;
+    if (trimmed.startsWith("data:")) return trimmed;
     return `${API_BASE}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
 };
 
@@ -86,6 +96,11 @@ const SelectEquipment = () => {
     const [equipmentList, setEquipmentList] = useState<EquipmentItem[]>([]);
     const [selectedEquipment, setSelectedEquipment] = useState<{ equipmentId: string; name: string; quantity: number; imageUrl?: string }[]>(initialSelectedEquipment);
     const [loading, setLoading] = useState(true);
+    const [stadiumImgSrc, setStadiumImgSrc] = useState<string>(resolveStadiumImage(stadiumImage));
+
+    useEffect(() => {
+        setStadiumImgSrc(resolveStadiumImage(stadiumImage));
+    }, [stadiumImage]);
 
     useEffect(() => {
         if (initialSelectedEquipment.length === 0) return;
@@ -170,76 +185,95 @@ const SelectEquipment = () => {
     };
 
     return (
-        <div className="p-5 font-kanit max-w-[670px] mx-auto">
-            <button
-                onClick={handleBack}
-                className="flex items-center gap-2 text-orange-500 font-semibold mb-4"
-            >
-                <ArrowLeft size={20} />
-                ย้อนกลับ
-            </button>
-            <h1 className="text-2xl font-bold text-center mb-4 flex items-center justify-center gap-2">
-                <Package size={24} className="text-orange-500" /> เลือกอุปกรณ์
-            </h1>
-            <p className="text-center text-gray-600 mb-4">เลือกจำนวนอุปกรณ์ที่ต้องการใช้</p>
+        <div className="relative min-h-screen font-kanit">
+            <div className="absolute inset-0">
+                <Image
+                    src={stadiumImgSrc}
+                    alt={stadiumName}
+                    fill
+                    priority
+                    className="object-cover"
+                    sizes="100vw"
+                    onError={() => setStadiumImgSrc(DEFAULT_STADIUM_IMAGE)}
+                />
+                <div className="absolute inset-0 bg-black/55" aria-hidden="true" />
+            </div>
 
-            {/* ✅ แสดง Loading เมื่อกำลังโหลดอุปกรณ์ */}
-            {loading ? (
-                <p className="text-center text-gray-500">กำลังโหลดข้อมูลอุปกรณ์...</p>
-            ) : equipmentList.length === 0 ? (
-                <p className="text-center text-gray-500">ไม่มีอุปกรณ์ให้เลือก</p>
-            ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pb-24">
-                    {equipmentList.map((item) => {
-                        const selectedItem = selectedEquipment.find((eq) => eq.equipmentId === item._id);
-                        const selectedCount = selectedItem ? selectedItem.quantity : 0;
-                        const isMax = selectedCount >= item.quantity;
-                        const isMin = selectedCount <= 0;
+            <div className="relative z-10 px-4 pt-20 pb-32 max-w-[720px] mx-auto">
+                <div className="backdrop-blur-sm bg-white/85 rounded-2xl shadow-xl p-5">
+                    <button
+                        onClick={handleBack}
+                        className="flex items-center gap-2 text-orange-500 font-semibold mb-4"
+                    >
+                        <ArrowLeft size={20} />
+                        ย้อนกลับ
+                    </button>
+                    <h1 className="text-2xl font-bold text-center mb-4 flex items-center justify-center gap-2">
+                        <Package size={24} className="text-orange-500" /> เลือกอุปกรณ์
+                    </h1>
+                    <p className="text-center text-gray-600 mb-4">เลือกจำนวนอุปกรณ์ที่ต้องการใช้</p>
 
-                        return (
-                            <div key={item._id} className="p-3 border rounded-sm shadow-md bg-white flex flex-col">
-                                <EquipmentImage imageUrl={item.imageUrl} name={item.name} />
-                                <h2 className="text-sm font-bold text-center min-h-[40px] flex items-center justify-center text-gray-800">
-                                    {item.name}
-                                </h2>
-                                <p className="text-xs text-gray-500 text-center">เหลือ {item.quantity} ชิ้น</p>
-                                <div className="flex items-center justify-center gap-2 mt-3">
-                                    <button
-                                        onClick={() => handleDecrease(item._id)}
-                                        className={`text-gray-500 ${isMin ? "opacity-50 cursor-not-allowed" : "hover:text-red-500"}`}
-                                        disabled={isMin}
-                                    >
-                                        <MinusCircle size={24} />
-                                    </button>
-                                    <span className="text-lg font-bold">{selectedCount}</span>
-                                    <button
-                                        onClick={() => handleIncrease(item._id, item.name, item.quantity, item.imageUrl)}
-                                        className={`text-gray-500 ${isMax ? "opacity-50 cursor-not-allowed" : "hover:text-orange-500"}`}
-                                        disabled={isMax}
-                                    >
-                                        <PlusCircle size={24} />
-                                    </button>
-                                </div>
-                            </div>
-                        );
-                    })}
+                    {loading ? (
+                        <p className="text-center text-gray-500">กำลังโหลดข้อมูลอุปกรณ์...</p>
+                    ) : equipmentList.length === 0 ? (
+                        <p className="text-center text-gray-500">ไม่มีอุปกรณ์ให้เลือก</p>
+                    ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {equipmentList.map((item) => {
+                                const selectedItem = selectedEquipment.find((eq) => eq.equipmentId === item._id);
+                                const selectedCount = selectedItem ? selectedItem.quantity : 0;
+                                const isMax = selectedCount >= item.quantity;
+                                const isMin = selectedCount <= 0;
+
+                                return (
+                                    <div key={item._id} className="p-3 border rounded-sm shadow-md bg-white/90 flex flex-col">
+                                        <EquipmentImage imageUrl={item.imageUrl} name={item.name} />
+                                        <h2 className="text-sm font-bold text-center min-h-[40px] flex items-center justify-center text-gray-800">
+                                            {item.name}
+                                        </h2>
+                                        <p className="text-xs text-gray-500 text-center">เหลือ {item.quantity} ชิ้น</p>
+                                        <div className="flex items-center justify-center gap-2 mt-3">
+                                            <button
+                                                onClick={() => handleDecrease(item._id)}
+                                                className={`text-gray-500 ${isMin ? "opacity-50 cursor-not-allowed" : "hover:text-red-500"}`}
+                                                disabled={isMin}
+                                            >
+                                                <MinusCircle size={24} />
+                                            </button>
+                                            <span className="text-lg font-bold">{selectedCount}</span>
+                                            <button
+                                                onClick={() => handleIncrease(item._id, item.name, item.quantity, item.imageUrl)}
+                                                className={`text-gray-500 ${isMax ? "opacity-50 cursor-not-allowed" : "hover:text-orange-500"}`}
+                                                disabled={isMax}
+                                            >
+                                                <PlusCircle size={24} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
-            )}
+            </div>
 
-            {/* ✅ แสดงปุ่มจอง และจำนวนที่เลือก */}
-            <div className="max-w-[670px] mx-auto fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4 flex justify-between items-center rounded-t-xl">
-                <div className="text-lg font-bold text-black">
-                    อุปกรณ์ที่เลือก <br />
-                    <span className="text-orange-600 text-xl font-extrabold">
-                        {selectedEquipment.length} รายการ
-                    </span>
+            <div className="fixed bottom-0 left-0 right-0 z-20">
+                <div className="max-w-[720px] mx-auto px-4 pb-4">
+                    <div className="backdrop-blur-sm bg-white/85 shadow-2xl p-4 rounded-2xl flex justify-between items-center">
+                        <div className="text-lg font-bold text-black">
+                            อุปกรณ์ที่เลือก<br />
+                            <span className="text-orange-600 text-xl font-extrabold">
+                                {selectedEquipment.length} รายการ
+                            </span>
+                        </div>
+                        <button
+                            onClick={handleNext}
+                            className="px-6 py-3 rounded-xl text-lg font-semibold transition bg-orange-500 text-white hover:bg-orange-600"
+                        >
+                            ต่อไป
+                        </button>
+                    </div>
                 </div>
-                <button
-                    onClick={handleNext}
-                    className="px-6 py-3 rounded-sm text-lg font-semibold transition bg-orange-500 text-white hover:bg-orange-600"
-                >
-                    ต่อไป
-                </button>
             </div>
         </div>
     );
