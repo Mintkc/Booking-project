@@ -2,13 +2,13 @@
 
 import { useState, useEffect, Suspense, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { getAvailableDates, getStadiumBookings, API_BASE } from "@/utils/api";
+import { getAvailableDates, getStadiumBookings } from "@/utils/api";
 import { toast } from "react-toastify";
 import { CircleChevronLeft, CircleChevronRight, ArrowLeft } from "lucide-react";
+import Image from "next/image";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
 import "dayjs/locale/th";
-import Image from "next/image";
 
 dayjs.locale("th");
 dayjs.extend(isBetween);
@@ -30,24 +30,11 @@ const bookingStatusLabel: Record<StadiumBooking["status"], string> = {
   "Return Success": "คืนอุปกรณ์สำเร็จ",
 };
 
-const DEFAULT_STADIUM_IMAGE = "/images/stadium-placeholder.jpg";
-
-const resolveStadiumImage = (imageUrl: string) => {
-  if (!imageUrl || imageUrl.trim() === "") return DEFAULT_STADIUM_IMAGE;
-  const trimmed = imageUrl.trim();
-  if (trimmed.startsWith("/images/")) return trimmed;
-  if (trimmed.startsWith("http")) return trimmed;
-  if (trimmed.startsWith("data:")) return trimmed;
-  return `${API_BASE}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
-};
-
-const SelectDatePage = () => {
-  return (
-    <Suspense fallback={<p className="text-center text-gray-500">กำลังโหลด...</p>}>
-      <SelectDate />
-    </Suspense>
-  );
-};
+const SelectDatePage = () => (
+  <Suspense fallback={<p className="text-center text-gray-500">กำลังโหลด...</p>}>
+    <SelectDate />
+  </Suspense>
+);
 
 const SelectDate = () => {
   const searchParams = useSearchParams();
@@ -70,11 +57,6 @@ const SelectDate = () => {
   const [currentMonth, setCurrentMonth] = useState(dayjs().month() + 1);
   const [stadiumBookings, setStadiumBookings] = useState<StadiumBooking[]>([]);
   const [bookingInfoLoading, setBookingInfoLoading] = useState<boolean>(false);
-  const [stadiumImgSrc, setStadiumImgSrc] = useState<string>(resolveStadiumImage(stadiumImage));
-
-  useEffect(() => {
-    setStadiumImgSrc(resolveStadiumImage(stadiumImage));
-  }, [stadiumImage]);
 
   // โหลดวันว่าง/ไม่ว่าง
   useEffect(() => {
@@ -86,8 +68,8 @@ const SelectDate = () => {
           Array.isArray(data?.dates)
             ? data.dates
             : Array.isArray(data?.availableDates)
-              ? data.availableDates
-              : [];
+            ? data.availableDates
+            : [];
         setDateStatusList(
           normalized
             .filter((x: any) => x && x.date)
@@ -103,13 +85,13 @@ const SelectDate = () => {
     })();
   }, [stadiumId, currentYear, currentMonth]);
 
+  // โหลดรายการจองในเดือนนั้นๆ
   useEffect(() => {
     if (!stadiumId.trim()) {
       setStadiumBookings([]);
       setBookingInfoLoading(false);
       return;
     }
-
     (async () => {
       try {
         setBookingInfoLoading(true);
@@ -130,7 +112,10 @@ const SelectDate = () => {
     return m;
   }, [dateStatusList]);
 
-  const monthStart = useMemo(() => dayjs(`${currentYear}-${String(currentMonth).padStart(2, "0")}-01`), [currentYear, currentMonth]);
+  const monthStart = useMemo(
+    () => dayjs(`${currentYear}-${String(currentMonth).padStart(2, "0")}-01`),
+    [currentYear, currentMonth]
+  );
   const monthEnd = useMemo(() => monthStart.endOf("month"), [monthStart]);
   const daysInMonth = monthEnd.date();
   const firstDayIndex = monthStart.day();
@@ -202,17 +187,14 @@ const SelectDate = () => {
     }
   };
 
-  const isSelected = (date: string) => {
-    return (
-      date === selectedStartDate ||
-      date === selectedEndDate ||
-      (selectedStartDate &&
-        selectedEndDate &&
-        dayjs(date).isBetween(selectedStartDate, selectedEndDate, null, "[]"))
-    );
-  };
+  const isSelected = (date: string) =>
+    date === selectedStartDate ||
+    date === selectedEndDate ||
+    (selectedStartDate &&
+      selectedEndDate &&
+      dayjs(date).isBetween(selectedStartDate, selectedEndDate, null, "[]"));
 
-  // 🔑 ไปเลือกอุปกรณ์ก่อนยืนยันการจอง
+  // ไปหน้าเลือกอุปกรณ์
   const handleGoToEquipment = () => {
     if (!selectedStartDate) {
       toast.error("กรุณาเลือกวันที่");
@@ -261,134 +243,151 @@ const SelectDate = () => {
 
   return (
     <div className="relative min-h-screen font-kanit">
+      {/* 🔹 พื้นหลัง */}
       <div className="absolute inset-0">
         <Image
-          src={stadiumImgSrc}
+          src={stadiumImage || "/images/stadium-placeholder.jpg"}
           alt={stadiumName}
           fill
-          priority
           className="object-cover"
           sizes="100vw"
-          onError={() => setStadiumImgSrc(DEFAULT_STADIUM_IMAGE)}
         />
         <div className="absolute inset-0 bg-black/55" aria-hidden="true" />
       </div>
 
-      <div className="relative z-10 px-4 pt-20 pb-16 max-w-[720px] mx-auto">
-        <div className="backdrop-blur-sm bg-white/85 rounded-2xl shadow-xl p-5">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-orange-500 font-semibold mb-4"
-          >
-            <ArrowLeft size={20} />
-            ย้อนกลับ
+      {/* 🔹 เนื้อหา */}
+      <div className="relative z-10 p-3 max-w-[670px] mx-auto">
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-2 text-orange-400 font-semibold mb-4"
+        >
+          <ArrowLeft size={20} />
+          ย้อนกลับ
+        </button>
+
+        <h1 className="text-2xl font-bold text-center mb-4 text-white">📅 เลือกวันที่</h1>
+
+        {/* แถบเดือน/ปี */}
+        <div className="flex justify-between items-center mb-4">
+          <button onClick={() => handleMonthChange("prev")} className="p-2 bg-white/80 rounded-lg">
+            <CircleChevronLeft size={24} className="text-gray-800" />
           </button>
-          <h1 className="text-2xl font-bold text-center mb-4">📅 เลือกวันที่</h1>
+          <h2 className="text-lg font-semibold text-white drop-shadow">
+            {monthStart.format("MMMM YYYY")}
+          </h2>
+          <button onClick={() => handleMonthChange("next")} className="p-2 bg-white/80 rounded-lg">
+            <CircleChevronRight size={24} className="text-gray-800" />
+          </button>
+        </div>
 
-          <div className="flex justify-between items-center mb-4">
-            <button onClick={() => handleMonthChange("prev")} className="p-2 bg-gray-300 rounded-lg">
-              <CircleChevronLeft size={24} className="text-gray-700" />
-            </button>
-            <h2 className="text-lg font-semibold">
-              {monthStart.format("MMMM YYYY")}
-            </h2>
-            <button onClick={() => handleMonthChange("next")} className="p-2 bg-gray-300 rounded-lg">
-              <CircleChevronRight size={24} className="text-gray-700" />
-            </button>
-          </div>
+        {/* ตารางวัน */}
+        <div className="grid grid-cols-7 gap-2 text-center text-sm font-bold">
+          {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+            <div key={d} className="text-gray-200">
+              {d}
+            </div>
+          ))}
 
-          <div className="grid grid-cols-7 gap-2 text-center text-sm font-bold">
-            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
-              <div key={d} className="text-gray-500">{d}</div>
-            ))}
+          {Array.from({ length: firstDayIndex }, (_, i) => (
+            <div key={`empty-${i}`} className="text-gray-300">
+              -
+            </div>
+          ))}
 
-            {Array.from({ length: firstDayIndex }, (_, i) => (
-              <div key={`empty-${i}`} className="text-gray-300">-</div>
-            ))}
+          {monthDates.map((d) => {
+            const status = statusMap.get(d) ?? "ว่าง";
+            const isPast = dayjs(d).isBefore(dayjs(todayStr), "day");
+            const disabled = status !== "ว่าง" || isPast;
 
-            {monthDates.map((d) => {
-              const status = statusMap.get(d) ?? "ว่าง";
-              const isPast = dayjs(d).isBefore(dayjs(todayStr), "day");
-              const disabled = status !== "ว่าง" || isPast;
+            return (
+              <button
+                key={d}
+                onClick={() => handleDateSelect(d, status)}
+                disabled={disabled}
+                className={`p-2 rounded-sm text-center font-bold transition-all
+                ${
+                  isSelected(d)
+                    ? "bg-orange-700 text-white"
+                    : disabled
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                    : "bg-orange-400 text-white hover:bg-orange-500"
+                }`}
+                title={status}
+              >
+                {dayjs(d).date()}
+                {!isPast && <span className="block text-xs mt-1">{status}</span>}
+              </button>
+            );
+          })}
+        </div>
 
-              return (
-                <button
-                  key={d}
-                  onClick={() => handleDateSelect(d, status)}
-                  disabled={disabled}
-                  className={`p-2 rounded-sm text-center font-bold transition-all
-                    ${isSelected(d)
-                      ? "bg-orange-700 text-white"
-                      : disabled
-                        ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                        : "bg-orange-400 text-white hover:bg-orange-500"}`}
-                  title={status}
-                >
-                  {dayjs(d).date()}
-                  {!isPast && <span className="block text-xs mt-1">{status}</span>}
-                </button>
-              );
-            })}
-          </div>
+        {/* เวลา */}
+        <div className="mt-6">
+          <label className="block text-lg font-bold text-white">เลือกเวลาเริ่มใช้</label>
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            className="w-full p-2 border rounded"
+            disabled={!isTimeActive}
+          />
+        </div>
 
-          <div className="mt-6">
-            <label className="block text-lg font-bold text-gray-700">เลือกเวลาเริ่มใช้</label>
+        {selectedStartDate && (!selectedEndDate || selectedStartDate === selectedEndDate) && (
+          <div className="mt-4">
+            <label className="block text-lg font-bold text-white">เลือกเวลาสิ้นสุด</label>
             <input
               type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
               className="w-full p-2 border rounded"
               disabled={!isTimeActive}
             />
           </div>
+        )}
 
-          {selectedStartDate && (!selectedEndDate || selectedStartDate === selectedEndDate) && (
-            <div className="mt-4">
-              <label className="block text-lg font-bold text-gray-700">เลือกเวลาสิ้นสุด</label>
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full p-2 border rounded"
-                disabled={!isTimeActive}
-              />
-            </div>
+        {/* ข้อมูลการจองในช่วงที่เลือก */}
+        <div className="mt-8">
+          <h2 className="text-xl font-bold mb-3 text-white">ข้อมูลการจองของวันที่เลือก</h2>
+          {!selectedDates.length && (
+            <p className="text-gray-200">กรุณาเลือกวันที่เพื่อดูรายละเอียดการจอง</p>
           )}
-
-          <div className="mt-8">
-            <h2 className="text-xl font-bold mb-3">ข้อมูลการจองของวันที่เลือก</h2>
-            {!selectedDates.length && (
-              <p className="text-gray-600">กรุณาเลือกวันที่เพื่อดูรายละเอียดการจอง</p>
-            )}
-            {selectedDates.length > 0 && bookingInfoLoading && (
-              <p className="text-gray-600">กำลังโหลดข้อมูลการจอง...</p>
-            )}
-            {selectedDates.length > 0 && !bookingInfoLoading && bookingsBySelectedDate.map(({ date, bookings }) => (
+          {selectedDates.length > 0 && bookingInfoLoading && (
+            <p className="text-gray-200">กำลังโหลดข้อมูลการจอง...</p>
+          )}
+          {selectedDates.length > 0 &&
+            !bookingInfoLoading &&
+            bookingsBySelectedDate.map(({ date, bookings }) => (
               <div key={date} className="mb-4">
-                <h3 className="text-lg font-semibold text-orange-600">
+                <h3 className="text-lg font-semibold text-orange-200">
                   {dayjs(date).format("DD MMMM YYYY")}
                 </h3>
                 {bookings.length === 0 ? (
-                  <p className="text-gray-600">ยังไม่มีการจองสำหรับวันนี้</p>
+                  <p className="text-gray-200">ยังไม่มีการจองสำหรับวันนี้</p>
                 ) : (
                   <div className="space-y-3 mt-2">
                     {bookings.map((booking) => (
-                      <div key={booking._id} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                      <div
+                        key={booking._id}
+                        className="bg-white/90 border border-gray-200 rounded-lg p-3 shadow-sm"
+                      >
                         <p className="font-semibold text-gray-800">
                           🕒 {booking.startTime} - {booking.endTime}
                         </p>
                         <p className="text-gray-600">
                           ผู้จอง: {booking.userId?.fullname || "ไม่ระบุ"}
                         </p>
-                        <p className={`text-sm font-semibold ${
-                          booking.status === "confirmed"
-                            ? "text-green-600"
-                            : booking.status === "pending"
+                        <p
+                          className={`text-sm font-semibold ${
+                            booking.status === "confirmed"
+                              ? "text-green-600"
+                              : booking.status === "pending"
                               ? "text-yellow-600"
                               : booking.status === "canceled"
-                                ? "text-red-600"
-                                : "text-blue-600"
-                        }`}>
+                              ? "text-red-600"
+                              : "text-blue-600"
+                          }`}
+                        >
                           สถานะ: {bookingStatusLabel[booking.status] || booking.status}
                         </p>
                       </div>
@@ -397,12 +396,14 @@ const SelectDate = () => {
                 )}
               </div>
             ))}
-          </div>
-
-          <button onClick={handleGoToEquipment} className="w-full mt-6 bg-orange-500 text-white py-3 rounded-lg text-lg font-bold">
-            เลือกอุปกรณ์
-          </button>
         </div>
+
+        <button
+          onClick={handleGoToEquipment}
+          className="w-full mt-6 bg-orange-500 text-white py-3 rounded-lg text-lg font-bold"
+        >
+          เลือกอุปกรณ์
+        </button>
       </div>
     </div>
   );
