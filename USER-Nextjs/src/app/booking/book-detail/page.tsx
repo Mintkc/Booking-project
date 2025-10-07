@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { createBooking, API_BASE } from "@/utils/api";
-import { Calendar, Package, MapPin, CheckCircle, User, Clock, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { Package, MapPin, CheckCircle, User, Clock, ArrowLeft } from "lucide-react";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 
@@ -66,27 +66,6 @@ const EquipmentPreview = ({ imageUrl, name }: { imageUrl?: string; name: string 
     );
 };
 
-const EquipmentHeroImage = ({ imageUrl, name }: { imageUrl?: string; name: string }) => {
-    const [src, setSrc] = useState(resolveEquipmentImage(imageUrl));
-
-    useEffect(() => {
-        setSrc(resolveEquipmentImage(imageUrl));
-    }, [imageUrl]);
-
-    return (
-        <div className="relative w-full h-52 sm:h-60 rounded-2xl overflow-hidden bg-gray-100">
-            <Image
-                src={src}
-                alt={name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 400px"
-                onError={() => setSrc(DEFAULT_EQUIPMENT_IMAGE)}
-            />
-        </div>
-    );
-};
-
 const BookingDetailPage = () => {
     return (
         <Suspense fallback={<p className="text-center text-gray-500">Loading...</p>}>
@@ -128,38 +107,19 @@ const BookingDetail = () => {
             return [];
         }
     }, [equipmentQuery]);
+    const totalEquipmentQuantity = useMemo(
+        () => selectedEquipment.reduce((sum, item) => sum + (item.quantity ?? 0), 0),
+        [selectedEquipment]
+    );
 
     // ✅ กำหนด type `User | null` ให้ชัดเจน
     const [user, setUser] = useState<UserType | null>(null);
     const [loadingUser, setLoadingUser] = useState(true);
     const [stadiumImgSrc, setStadiumImgSrc] = useState<string>(resolveStadiumImage(stadiumImage));
-    const [equipmentIndex, setEquipmentIndex] = useState(0);
 
     useEffect(() => {
         setStadiumImgSrc(resolveStadiumImage(stadiumImage));
     }, [stadiumImage]);
-
-    useEffect(() => {
-        if (selectedEquipment.length === 0) {
-            setEquipmentIndex(0);
-            return;
-        }
-        setEquipmentIndex((idx) => (idx >= selectedEquipment.length ? 0 : idx));
-    }, [selectedEquipment.length]);
-
-    const currentEquipment = selectedEquipment[equipmentIndex];
-
-    const handleNextEquipment = () => {
-        if (selectedEquipment.length <= 1) return;
-        setEquipmentIndex((prev) => (prev + 1) % selectedEquipment.length);
-    };
-
-    const handlePrevEquipment = () => {
-        if (selectedEquipment.length <= 1) return;
-        setEquipmentIndex((prev) =>
-            prev === 0 ? selectedEquipment.length - 1 : prev - 1
-        );
-    };
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -259,41 +219,30 @@ const BookingDetail = () => {
                                 <h2 className="text-lg font-bold">สนามที่จอง & รายละเอียด</h2>
                             </div>
                             <div className="space-y-4">
-                                <div className="relative w-full h-52 sm:h-60 rounded-2xl overflow-hidden bg-gray-100">
-                                    <Image
-                                        src={stadiumImgSrc}
-                                        alt={stadiumName}
-                                        fill
-                                        className="object-cover"
-                                        sizes="(max-width: 768px) 100vw, 360px"
-                                        onError={() => setStadiumImgSrc(DEFAULT_STADIUM_IMAGE)}
-                                    />
-                                </div>
-
-                                <div className="rounded-lg border border-orange-100 bg-orange-50/70 p-4 space-y-3">
-                                    <p className="text-sm text-orange-600 uppercase tracking-wide">สนามที่เลือก</p>
-                                    <p className="text-2xl font-semibold text-gray-900">{stadiumName}</p>
-                                    <div className="inline-flex items-center gap-2 text-sm text-orange-600 bg-white border border-orange-200 px-3 py-2 rounded-full">
-                                        <CheckCircle size={16} />
-                                        พร้อมใช้งานสำหรับการจองนี้
+                                <div className="grid gap-3 grid-cols-3">
+                                    <div className="col-span-1 relative w-full h-48 sm:h-50 rounded-2xl overflow-hidden bg-gray-100">
+                                        <Image
+                                            src={stadiumImgSrc}
+                                            alt={stadiumName}
+                                            fill
+                                            className="object-contain"
+                                            sizes="(max-width: 768px) 100vw, 360px"
+                                            onError={() => setStadiumImgSrc(DEFAULT_STADIUM_IMAGE)}
+                                        />
                                     </div>
-                                </div>
 
-                                <div className="rounded-lg border border-orange-100 bg-gradient-to-r from-orange-50/70 to-orange-100/70 p-4 space-y-4">
-                                    <p className="text-sm text-orange-700 uppercase tracking-wide">รายละเอียดการใช้งาน</p>
-                                    <div className="grid gap-3">
-                                        <div className="grid gap-3 sm:grid-cols-2">
-                                            <div className="bg-white/80 border border-orange-200 rounded-lg p-3">
+                                    <div className="col-span-2 rounded-lg border border-orange-100 bg-orange-50/70 p-4 space-y-3">
+                                        <p className="text-sm text-orange-600 uppercase tracking-wide">สนามที่เลือก</p>
+                                        <p className="text-2xl font-semibold text-gray-900 pr-4">{stadiumName}</p>
+                                        <div className="grid gap-3 sm:grid-cols-3">
+                                            <div>
                                                 <p className="text-xs text-orange-600 uppercase tracking-wide">วันที่เริ่ม</p>
                                                 <p className="text-base font-semibold text-gray-900">{dayjs(startDate).format("DD/MM/YYYY")}</p>
                                             </div>
-                                            <div className="bg-white/80 border border-orange-200 rounded-lg p-3">
+                                            <div>
                                                 <p className="text-xs text-orange-600 uppercase tracking-wide">วันที่สิ้นสุด</p>
                                                 <p className="text-base font-semibold text-gray-900">{dayjs(endDate).format("DD/MM/YYYY")}</p>
                                             </div>
-                                        </div>
-                                        <div className="bg-white/80 border border-orange-200 rounded-lg p-3 flex items-center gap-2">
-                                            <Clock className="text-orange-500" size={18} />
                                             <div>
                                                 <p className="text-xs text-orange-600 uppercase tracking-wide">ช่วงเวลา</p>
                                                 <p className="text-base font-semibold text-gray-900">{startTime} - {endTime}</p>
@@ -302,67 +251,38 @@ const BookingDetail = () => {
                                     </div>
                                 </div>
                             </div>
+                            
                         </section>
 
                         <section className="bg-white/95 p-4 rounded-xl shadow border border-orange-200">
-                            <div className="flex items-center gap-2 mb-3">
-                                <Package className="text-orange-500" size={20} />
-                                <h2 className="text-lg font-bold">รายการอุปกรณ์</h2>
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                    <Package className="text-orange-500" size={20} />
+                                    <h2 className="text-lg font-bold">รายการอุปกรณ์</h2>
+                                </div>
+                                {totalEquipmentQuantity > 0 && (
+                                    <span className="text-sm font-semibold text-orange-600">
+                                        ทั้งหมด {totalEquipmentQuantity} ชิ้น
+                                    </span>
+                                )}
                             </div>
                             {selectedEquipment.length > 0 ? (
-                                <div className="space-y-4">
-                                    <div className="relative">
-                                        <EquipmentHeroImage imageUrl={currentEquipment?.imageUrl} name={currentEquipment?.name ?? "equipment image"} />
-                                        {selectedEquipment.length > 1 && (
-                                            <>
-                                                <button
-                                                    onClick={handlePrevEquipment}
-                                                    className="absolute top-1/2 left-3 -translate-y-1/2 bg-white/80 hover:bg-white text-orange-500 p-2 rounded-full shadow"
-                                                    aria-label="Previous equipment"
-                                                >
-                                                    <ChevronLeft size={20} />
-                                                </button>
-                                                <button
-                                                    onClick={handleNextEquipment}
-                                                    className="absolute top-1/2 right-3 -translate-y-1/2 bg-white/80 hover:bg-white text-orange-500 p-2 rounded-full shadow"
-                                                    aria-label="Next equipment"
-                                                >
-                                                    <ChevronRight size={20} />
-                                                </button>
-                                            </>
-                                        )}
-                                    </div>
-
-                                    <div className="rounded-lg border border-orange-100 bg-orange-50/70 p-4">
-                                        <p className="text-sm text-orange-600 uppercase tracking-wide">อุปกรณ์ที่ {equipmentIndex + 1} จาก {selectedEquipment.length}</p>
-                                        <p className="text-xl font-semibold text-gray-900 mt-1">{currentEquipment?.name}</p>
-                                        <p className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-white border border-orange-200 rounded-full text-sm font-medium text-orange-600">
-                                            <Package size={16} /> จำนวน: {currentEquipment?.quantity}
-                                        </p>
-                                    </div>
-
-                                    {selectedEquipment.length > 1 && (
-                                        <div className="flex gap-3 overflow-x-auto pb-2">
-                                            {selectedEquipment.map((item, idx) => (
-                                                <button
-                                                    key={item.equipmentId}
-                                                    onClick={() => setEquipmentIndex(idx)}
-                                                    className={`flex flex-col items-center gap-2 p-2 border rounded-lg min-w-[88px] transition ${
-                                                        idx === equipmentIndex
-                                                            ? "border-orange-400 bg-orange-50"
-                                                            : "border-orange-100 bg-white hover:border-orange-300"
-                                                    }`}
-                                                    aria-label={`เลือก ${item.name}`}
-                                                >
-                                                    <EquipmentPreview imageUrl={item.imageUrl} name={item.name} />
-                                                    <span className="text-xs font-medium text-gray-700 text-center line-clamp-2">
-                                                        {item.name}
-                                                    </span>
-                                                    <span className="text-xs text-orange-500 font-semibold">x{item.quantity}</span>
-                                                </button>
-                                            ))}
+                                <div className="flex gap-3 overflow-x-auto pb-2 pr-1">
+                                    {selectedEquipment.map((item) => (
+                                        <div
+                                            key={item.equipmentId}
+                                            className="flex min-w-[220px] flex-shrink-0 items-center gap-3 rounded-xl border border-orange-100 bg-white/80 p-3"
+                                        >
+                                            <EquipmentPreview imageUrl={item.imageUrl} name={item.name} />
+                                            <div className="flex-1">
+                                                <p className="text-sm font-semibold text-gray-900">{item.name}</p>
+                                                <p className="text-xs text-gray-600">
+                                                    จำนวนที่จอง{" "}
+                                                    <span className="font-semibold text-orange-500">x{item.quantity}</span>
+                                                </p>
+                                            </div>
                                         </div>
-                                    )}
+                                    ))}
                                 </div>
                             ) : (
                                 <p className="text-gray-500">ไม่ได้เลือกอุปกรณ์</p>
