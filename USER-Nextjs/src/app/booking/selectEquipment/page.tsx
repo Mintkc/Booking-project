@@ -30,7 +30,25 @@ const resolveImageSrc = (imageUrl?: string) => {
   return `${API_BASE}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
 };
 
-const EquipmentImage = ({ imageUrl, name }: { imageUrl?: string; name: string }) => {
+const EquipmentImage = ({
+  imageUrl,
+  name,
+  count,
+  quantity,
+  onIncrease,
+  onDecrease,
+  isMin,
+  isMax,
+}: {
+  imageUrl?: string;
+  name: string;
+  count?: number;
+  quantity: number;
+  onIncrease?: () => void;
+  onDecrease?: () => void;
+  isMin?: boolean;
+  isMax?: boolean;
+}) => {
   const [src, setSrc] = useState(resolveImageSrc(imageUrl));
 
   useEffect(() => {
@@ -38,7 +56,7 @@ const EquipmentImage = ({ imageUrl, name }: { imageUrl?: string; name: string })
   }, [imageUrl]);
 
   return (
-    <div className="relative w-full h-24 mb-3 overflow-hidden rounded-sm bg-gray-100">
+    <div className="absolute inset-0">
       <Image
         src={src}
         alt={name}
@@ -47,6 +65,40 @@ const EquipmentImage = ({ imageUrl, name }: { imageUrl?: string; name: string })
         sizes="(max-width: 768px) 33vw, 200px"
         onError={() => setSrc(DEFAULT_EQUIPMENT_IMAGE)}
       />
+      {/* overlay: name + controls */}
+      <div className="absolute inset-x-0 bottom-0">
+        <div className="bg-gradient-to-t from-black/80 to-transparent pt-6 pb-2 px-2">
+          <p className="text-white text-sm md:text-base font-semibold text-center line-clamp-2 leading-snug mb-1">
+            {name}
+          </p>
+          <p className="text-white text-xs text-center opacity-80 mb-2">เหลือ {quantity} ชิ้น</p>
+          {(typeof count !== "undefined") && (onIncrease || onDecrease) && (
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={onDecrease}
+                className={`text-white ${isMin ? "opacity-50 cursor-not-allowed" : "hover:text-red-300"}`}
+                disabled={!!isMin}
+                aria-label="ลดจำนวน"
+                title="ลดจำนวน"
+              >
+                <MinusCircle size={22} />
+              </button>
+              <span className="text-white text-lg font-extrabold min-w-[2ch] text-center bg-black/30 rounded px-2">
+                {count}
+              </span>
+              <button
+                onClick={onIncrease}
+                className={`text-white ${isMax ? "opacity-50 cursor-not-allowed" : "hover:text-orange-300"}`}
+                disabled={!!isMax}
+                aria-label="เพิ่มจำนวน"
+                title="เพิ่มจำนวน"
+              >
+                <PlusCircle size={22} />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
@@ -314,29 +366,17 @@ const SelectEquipment = () => {
               const isMin = selectedCount <= 0;
 
               return (
-                <div key={item._id} className="p-3 border rounded-sm shadow-md bg-white/90 backdrop-blur">
-                  <EquipmentImage imageUrl={item.imageUrl} name={item.name} />
-                  <h2 className="text-sm font-bold text-center min-h-[40px] flex items-center justify-center text-gray-800">
-                    {item.name}
-                  </h2>
-                  <p className="text-xs text-gray-500 text-center">เหลือ {item.quantity} ชิ้น</p>
-                  <div className="flex items-center justify-center gap-2 mt-3">
-                    <button
-                      onClick={() => handleDecrease(item._id)}
-                      className={`text-gray-700 ${isMin ? "opacity-50 cursor-not-allowed" : "hover:text-red-600"}`}
-                      disabled={isMin}
-                    >
-                      <MinusCircle size={24} />
-                    </button>
-                    <span className="text-lg font-bold text-gray-900">{selectedCount}</span>
-                    <button
-                      onClick={() => handleIncrease(item._id, item.name, item.quantity, item.imageUrl)}
-                      className={`text-gray-700 ${isMax ? "opacity-50 cursor-not-allowed" : "hover:text-orange-600"}`}
-                      disabled={isMax}
-                    >
-                      <PlusCircle size={24} />
-                    </button>
-                  </div>
+                <div key={item._id} className="relative h-48 md:h-56 rounded-sm overflow-hidden border border-white/20 shadow-md">
+                  <EquipmentImage
+                    imageUrl={item.imageUrl}
+                    name={item.name}
+                    count={selectedCount}
+                    quantity={item.quantity}
+                    onIncrease={() => handleIncrease(item._id, item.name, item.quantity, item.imageUrl)}
+                    onDecrease={() => handleDecrease(item._id)}
+                    isMin={isMin}
+                    isMax={isMax}
+                  />
                 </div>
               );
             })}
