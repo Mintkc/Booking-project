@@ -1,6 +1,7 @@
 // import { v4 as uuidv4 } from "uuid";
 import nodemailer from "nodemailer";
 import User from "../models/User.js";
+import { message } from "hawk/lib/client.js";
 
 
 // ฟังก์ชันสร้างรหัส Reset (ตัวเลข + ตัวอักษรใหญ่ 6 ตัว)
@@ -163,7 +164,27 @@ export const unblockUser = async (req, res) => {
 
 export const register = async (req, res) => {
     try {
-        const { fullname, email, phoneNumber, fieldOfStudy, year, password } = req.body;
+        const { fullname, email, phoneNumber, password, userType, fieldOfStudy, year, department} = req.body;
+
+        if (!fullname || !email || !phoneNumber || !password){
+            return res.stsatus(400).json({ message: "กรุณากรอกชื่อ อีเมล์ เบอร์โทร และรหัสผ่านให้ครบ"});
+        }
+
+        if (!["student", "staff"].includes(userType)) {
+            return res.status(400).json({ message: "ประเภทผู้ใช้งานไม่ถูกต้อง (student/staff)"});
+        }
+
+        if (userType === "student"){
+            if (!fieldOfStudy || !year){
+                return res.status(400).json({ message: "กรุณากรอกสาขาวิชาและชั้นปี"});
+            }
+        }
+
+        if (userType == "staff"){
+            if (!department) {
+                return res.status(400).json({ message: "กรุณากรอกหน่วยงาน"});
+            }
+        }
 
         // ตรวจสอบว่าอีเมลหรือเบอร์โทรถูกใช้ไปแล้วหรือไม่
         const existingUser = await User.findOne({ $or: [{ email }, { phoneNumber }] });
@@ -176,8 +197,10 @@ export const register = async (req, res) => {
             fullname,
             email,
             phoneNumber,
-            fieldOfStudy,
-            year,
+            userType,
+            fieldOfStudy: userType == "student" ? fieldOfStudy : null,
+            year: userType === "student" ? year : null,
+            department: userType === "staff" ? department : null,
             password, // ไม่เข้ารหัส (ถ้าต้องการเข้ารหัสควรใช้ bcrypt)
             blockUntil: null // ผู้ใช้ใหม่จะยังไม่ถูกบล็อก
         });

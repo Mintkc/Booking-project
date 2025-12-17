@@ -30,6 +30,12 @@ const bookingStatusLabel: Record<StadiumBooking["status"], string> = {
   "Return Success": "คืนอุปกรณ์สำเร็จ",
 };
 
+const DEFAULT_START = "08:00";
+const DEFAULT_END = "18:00";
+
+type DayTime = { startTime: string; endTime: string };
+type DayTimeMap = Record<string, DayTime>;
+
 const SelectDatePage = () => (
   <Suspense fallback={<p className="text-center text-gray-500">กำลังโหลด...</p>}>
     <SelectDate />
@@ -49,8 +55,8 @@ const SelectDate = () => {
   const [selectedStartDate, setSelectedStartDate] = useState<string | null>(null);
   const [selectedEndDate, setSelectedEndDate] = useState<string | null>(null);
 
-  const [startTime, setStartTime] = useState("08:00");
-  const [endTime, setEndTime] = useState("18:00");
+  // ✅ เวลาแยกตามวัน
+  const [dayTimes, setDayTimes] = useState<DayTimeMap>({});
   const [isTimeActive, setIsTimeActive] = useState(false);
 
   const [currentYear, setCurrentYear] = useState(dayjs().year());
@@ -143,6 +149,29 @@ const SelectDate = () => {
     return result;
   }, [selectedStartDate, selectedEndDate]);
 
+  // ✅ sync dayTimes ให้มีทุกวันที่เลือก
+  useEffect(() => {
+    if (!selectedDates.length) {
+      setDayTimes({});
+      return;
+    }
+    setDayTimes((prev) => {
+      const next: DayTimeMap = { ...prev };
+
+      // add missing
+      for (const d of selectedDates) {
+        if (!next[d]) next[d] = { startTime: DEFAULT_START, endTime: DEFAULT_END };
+      }
+
+      // remove dates not selected anymore
+      Object.keys(next).forEach((k) => {
+        if (!selectedDates.includes(k)) delete next[k];
+      });
+
+      return next;
+    });
+  }, [selectedDates]);
+
   const bookingsBySelectedDate = useMemo(() => {
     return selectedDates.map((date) => {
       const bookings = stadiumBookings.filter((booking) => {
@@ -194,6 +223,20 @@ const SelectDate = () => {
       selectedEndDate &&
       dayjs(date).isBetween(selectedStartDate, selectedEndDate, null, "[]"));
 
+  const setStartTimeForDay = (dateKey: string, startTime: string) => {
+    setDayTimes((prev) => ({
+      ...prev,
+      [dateKey]: { ...(prev[dateKey] || { startTime: DEFAULT_START, endTime: DEFAULT_END }), startTime },
+    }));
+  };
+
+  const setEndTimeForDay = (dateKey: string, endTime: string) => {
+    setDayTimes((prev) => ({
+      ...prev,
+      [dateKey]: { ...(prev[dateKey] || { startTime: DEFAULT_START, endTime: DEFAULT_END }), endTime },
+    }));
+  };
+
   // ไปหน้าเลือกอุปกรณ์
   const handleGoToEquipment = () => {
     if (!selectedStartDate) {
@@ -205,21 +248,32 @@ const SelectDate = () => {
       return;
     }
 
-    const isSingleDay = !selectedEndDate || selectedStartDate === selectedEndDate;
-    if (isSingleDay && startTime >= endTime) {
-      toast.error("⛔ เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น");
-      return;
+    // ✅ validate เวลาแยกตามวัน
+    for (const d of selectedDates) {
+      const t = dayTimes[d];
+      const s = t?.startTime ?? DEFAULT_START;
+      const e = t?.endTime ?? DEFAULT_END;
+      if (s >= e) {
+        toast.error(`⛔ เวลาไม่ถูกต้องในวันที่ ${dayjs(d).format("DD MMMM YYYY")} (สิ้นสุดต้องมากกว่าเริ่มต้น)`);
+        return;
+      }
     }
 
     const end = selectedEndDate ?? selectedStartDate;
+
+    // ส่ง start/end ของ "วันแรก" ไว้เพื่อไม่ให้หน้าถัดไปพัง (ถ้าโค้ดยังใช้แบบเดิม)
+    const firstDay = selectedDates[0];
+    const firstTimes = dayTimes[firstDay] || { startTime: DEFAULT_START, endTime: DEFAULT_END };
+
     const params = new URLSearchParams({
       stadiumId,
       stadiumName,
       userId,
       startDate: selectedStartDate,
       endDate: end,
-      startTime,
-      endTime,
+      startTime: firstTimes.startTime,
+      endTime: firstTimes.endTime,
+      dayTimes: encodeURIComponent(JSON.stringify(dayTimes)), // ✅ เพิ่มใหม่: เวลาแยกตามวัน
       ...(stadiumImage ? { stadiumImage } : {}),
     });
 
@@ -240,6 +294,8 @@ const SelectDate = () => {
       return m;
     });
   };
+
+  const isMultiDay = selectedDates.length > 1;
 
   return (
     <div className="relative min-h-screen font-kanit">
@@ -321,28 +377,44 @@ const SelectDate = () => {
           })}
         </div>
 
-        {/* เวลา */}
-        <div className="mt-6">
-          <label className="block text-lg font-bold text-white">เลือกเวลาเริ่มใช้</label>
-          <input
-            type="time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            className="w-full p-2 border rounded"
-            disabled={!isTimeActive}
-          />
-        </div>
+        {/* ✅ เลือกเวลาแยกตามวัน */}
+        {selectedDates.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-lg font-bold text-white">เลือกเวลา{isMultiDay ? "ในแต่ละวัน" : ""}</h2>
 
-        {selectedStartDate && (!selectedEndDate || selectedStartDate === selectedEndDate) && (
-          <div className="mt-4">
-            <label className="block text-lg font-bold text-white">เลือกเวลาสิ้นสุด</label>
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="w-full p-2 border rounded"
-              disabled={!isTimeActive}
-            />
+            {selectedDates
+              .slice()
+              .sort()
+              .map((d) => {
+                const t = dayTimes[d] || { startTime: DEFAULT_START, endTime: DEFAULT_END };
+                return (
+                  <div key={d} className="mt-3 bg-white/10 rounded-lg p-3">
+                    <div className="text-orange-200 font-semibold mb-2">
+                      {dayjs(d).format("DD MMMM YYYY")}
+                    </div>
+
+                    <div className="flex gap-3 items-center flex-wrap">
+                      <label className="text-white font-semibold">เริ่ม</label>
+                      <input
+                        type="time"
+                        value={t.startTime}
+                        onChange={(e) => setStartTimeForDay(d, e.target.value)}
+                        className="p-2 border rounded"
+                        disabled={!isTimeActive}
+                      />
+
+                      <label className="text-white font-semibold">สิ้นสุด</label>
+                      <input
+                        type="time"
+                        value={t.endTime}
+                        onChange={(e) => setEndTimeForDay(d, e.target.value)}
+                        className="p-2 border rounded"
+                        disabled={!isTimeActive}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         )}
 
@@ -357,45 +429,54 @@ const SelectDate = () => {
           )}
           {selectedDates.length > 0 &&
             !bookingInfoLoading &&
-            bookingsBySelectedDate.map(({ date, bookings }) => (
-              <div key={date} className="mb-4">
-                <h3 className="text-lg font-semibold text-orange-200">
-                  {dayjs(date).format("DD MMMM YYYY")}
-                </h3>
-                {bookings.length === 0 ? (
-                  <p className="text-gray-200">ยังไม่มีการจองสำหรับวันนี้</p>
-                ) : (
-                  <div className="space-y-3 mt-2">
-                    {bookings.map((booking) => (
-                      <div
-                        key={booking._id}
-                        className="bg-white/90 border border-gray-200 rounded-lg p-3 shadow-sm"
-                      >
-                        <p className="font-semibold text-gray-800">
-                          🕒 {booking.startTime} - {booking.endTime}
-                        </p>
-                        <p className="text-gray-600">
-                          ผู้จอง: {booking.userId?.fullname || "ไม่ระบุ"}
-                        </p>
-                        <p
-                          className={`text-sm font-semibold ${
-                            booking.status === "confirmed"
-                              ? "text-green-600"
-                              : booking.status === "pending"
-                              ? "text-yellow-600"
-                              : booking.status === "canceled"
-                              ? "text-red-600"
-                              : "text-blue-600"
-                          }`}
+            bookingsBySelectedDate.map(({ date, bookings }) => {
+              const t = dayTimes[date];
+              return (
+                <div key={date} className="mb-4">
+                  <h3 className="text-lg font-semibold text-orange-200">
+                    {dayjs(date).format("DD MMMM YYYY")}
+                  </h3>
+
+                  {/* ✅ แสดงเวลาที่เลือกของวันนั้น */}
+                  <p className="text-gray-200 text-sm">
+                    เวลาที่เลือก: {t?.startTime ?? "--:--"} - {t?.endTime ?? "--:--"}
+                  </p>
+
+                  {bookings.length === 0 ? (
+                    <p className="text-gray-200">ยังไม่มีการจองสำหรับวันนี้</p>
+                  ) : (
+                    <div className="space-y-3 mt-2">
+                      {bookings.map((booking) => (
+                        <div
+                          key={booking._id}
+                          className="bg-white/90 border border-gray-200 rounded-lg p-3 shadow-sm"
                         >
-                          สถานะ: {bookingStatusLabel[booking.status] || booking.status}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+                          <p className="font-semibold text-gray-800">
+                            🕒 {booking.startTime} - {booking.endTime}
+                          </p>
+                          <p className="text-gray-600">
+                            ผู้จอง: {booking.userId?.fullname || "ไม่ระบุ"}
+                          </p>
+                          <p
+                            className={`text-sm font-semibold ${
+                              booking.status === "confirmed"
+                                ? "text-green-600"
+                                : booking.status === "pending"
+                                ? "text-yellow-600"
+                                : booking.status === "canceled"
+                                ? "text-red-600"
+                                : "text-blue-600"
+                            }`}
+                          >
+                            สถานะ: {bookingStatusLabel[booking.status] || booking.status}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
         </div>
 
         <button
